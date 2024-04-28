@@ -501,13 +501,11 @@ class SAR_Indexer:
         while i < len(p1) & j < len(p2):
             if p1(i) == p2(j):
                 res.append(p1(i))
-                i += 1
-                j += 1
+                i += 1; j += 1
             elif p1(i) < p2(j):
                 i += 1
             else:
                 j += 1
-            
         return res
 
 
@@ -530,6 +528,30 @@ class SAR_Indexer:
         ########################################
         ## COMPLETAR PARA TODAS LAS VERSIONES ##
         ########################################
+
+        #### SIN PROBAR 
+
+        res = []
+        i, j = 0
+        while i < len(p1) & j < len(p2):
+            if p1(i) == p2(j):
+                res.append(p1(i))
+                i += 1; j += 1
+            elif p1(i) < p2(j):
+                res.append(p1(i))
+                i += 1
+            else:
+                res.append(p2(j))
+                j += 1
+
+        while i < len(p1):
+            res.append(p1(i))
+        while j < len(p2):
+            res.append(p2(j))
+
+        return res
+
+        
 
 
     def minus_posting(self, p1, p2):
