@@ -546,8 +546,10 @@ class SAR_Indexer:
 
         while i < len(p1):
             res.append(p1(i))
+            i += 1
         while j < len(p2):
             res.append(p2(j))
+            j += 1
 
         return res
 
@@ -575,6 +577,24 @@ class SAR_Indexer:
         ########################################################
 
 
+        #### SIN PROBAR 
+
+        res = []
+        i, j = 0
+        while i < len(p1) & j < len(p2):
+            if p1(i) == p2(j):
+                i += 1; j += 1
+            elif p1(i) < p2(j):
+                res.append(p1(i))
+                i += 1
+            else:
+                j += 1
+
+        while i < len(p1):
+            res.append(p1(i))
+            i += 1
+
+        return res
 
 
 
