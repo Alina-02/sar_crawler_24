@@ -473,6 +473,9 @@ class SAR_Indexer:
 
 
 
+
+
+
     def and_posting(self, p1:list, p2:list):
         """
         NECESARIO PARA TODAS LAS VERSIONES
@@ -490,6 +493,23 @@ class SAR_Indexer:
         ########################################
         ## COMPLETAR PARA TODAS LAS VERSIONES ##
         ########################################
+
+        #### SIN PROBAR 
+
+        res = []
+        i, j = 0
+        while i < len(p1) & j < len(p2):
+            if p1(i) == p2(j):
+                res.append(p1(i))
+                i += 1
+                j += 1
+            elif p1(i) < p2(j):
+                i += 1
+            else:
+                j += 1
+            
+        return res
+
 
 
 
