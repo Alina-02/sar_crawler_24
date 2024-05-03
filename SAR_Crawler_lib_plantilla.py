@@ -155,6 +155,8 @@ class SAR_Wiki_Crawler:
 
         document = None
 
+        print(text)
+
         # COMPLETAR
 
         return document
@@ -212,7 +214,7 @@ class SAR_Wiki_Crawler:
                 fichero. Si se asigna None, se guardará al finalizar la captura.
             max_depth_level (int): Profundidad máxima de captura.
         """
-
+        
         # URLs válidas, ya visitadas (se hayan procesado, o no, correctamente)
         visited = set()
         # URLs en cola
@@ -226,7 +228,7 @@ class SAR_Wiki_Crawler:
         total_documents_captured = 0
         # Contador del número de ficheros escritos
         files_count = 0
-
+        
         # En caso de que no utilicemos bach_size, asignamos None a total_files
         # así el guardado no modificará el nombre del fichero base
         if batch_size is None:
@@ -237,6 +239,50 @@ class SAR_Wiki_Crawler:
             total_files = math.ceil(document_limit / batch_size)
 
         # COMPLETAR
+        while total_documents_captured < document_limit and len(queue)>0:
+
+            #sacamos el siguiente nodo del arbol del heap
+            file_node = hq.heappop(queue)
+
+            #sacamos sus caracteristicas
+            node_depth = file_node[0]
+            node_father = file_node[1]
+            node_url = file_node[2]
+            
+            '''
+            Comprueba si la url es valida
+            No se comprueba la profundidad porque no se añaden enlaces con mayor profundidad que la maxima 
+            y la profundidad de los enlaces iniciales siempre es 0
+            '''
+            if self.is_valid_url(node_url) and node_url.startswith("http"):
+                
+                #actualizamos lista de urls visitadas
+                visited.add(node_url)
+
+                #el raw content es una tupla con dos elementos, el texto del articulo y la lista con urls citados
+                raw_content = self.get_wikipedia_entry_content(node_url)
+
+                #tras capturar el documento correctamente actualizamos numero de documentos captuados
+                total_documents_captured+=1
+
+                #si el nodo actual no esta en el maximo nivel de profundidad
+                if node_depth<max_depth_level:
+                    #para cada url citado
+                    for url in raw_content[1]:
+                        
+                        #si es una url valida a un articulo de la wikipedia
+                        if self.is_valid_url(url):
+                            #si la url del articulo es relativa la hacemos absoluta
+                            if not url.startswith("http"):
+                                url = "https://es.wikipedia.org"+url
+                            
+                            #si no esta en la lista de visitados lo añadimos al heap
+                            if url not in visited:
+                                #añadimos nuevo nodo al heap
+                                hq.heappush(queue,(node_depth+1,node_url,url))           
+        
+        print(len(visited))
+        print(total_documents_captured)
 
 
     def wikipedia_crawling_from_url(self,
