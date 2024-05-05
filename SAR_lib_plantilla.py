@@ -235,7 +235,7 @@ class SAR_Indexer:
         for i, line in enumerate(open(filename)):
             j = self.parse_article(line)
 
-
+        #already_in_index
 
         #################
         ### COMPLETAR ###
@@ -244,10 +244,11 @@ class SAR_Indexer:
             txt = j['all']
             #estoy en el documento i palabra t
             tk = self.tokenize(txt)
+            
 
             #normal
 
-            if(self.positional == False):
+            if(self.positional == False | self.multifield == False):
                 for t in tk:
                     if(t not in self.index):
                         self.index[t] = {}
@@ -262,20 +263,21 @@ class SAR_Indexer:
 
             if(self.multifield):
 
-                 fields_to_tokenize = ['url', 'title', 'summary', 'section-name']
+                 fields_to_tokenize = ['all', 'title', 'summary', 'section-name']
                  for field in fields_to_tokenize:
                      tk = self.tokenize(j[field])
-
                      for t in tk:
                         if(t not in self.index):
                             self.index[t] = {}
-                            self.index[t][j['url']] = 1
+                            self.index[t][j['url']] = []
+                            self.index[t][j['url']].append(field)
                         else:
                             if(j['url'] not in self.index[t]):
-                                self.index[t][j['url']] = 1
-                            else:
-                                self.index[t][j['url']] += 1                        
-               
+                                self.index[t][j['url']] = []
+                                self.index[t][j['url']].append(field)
+                            if(field not in self.index[t][j['url']]):
+                                self.index[t][j['url']].append(field)                      
+
                 
             #positional
 
@@ -293,8 +295,8 @@ class SAR_Indexer:
                         else:
                             self.index[t][j['url']].append(i)
 
-        print(self.index['según'])
-
+ 
+        print(self.index)
 
     def set_stemming(self, v:bool):
         """
@@ -440,6 +442,28 @@ class SAR_Indexer:
         ########################################
         pass
 
+        if(self.positional == False & self.permuterm == False & self.permuterm == False & self.stemming == False & self.multifield == False):
+            return self.index[term]['all']
+
+        if(self.positional):
+            if(self.multifield == False):
+                return self.get_positionals(term)
+            else:
+                return self.get_positionals(term, field)
+        if(self.permuterm):
+            if(self.multifield == False):
+                return self.get_permuterm(term)
+            else:
+                return self.get_permuterm(term, field)
+        if(self.stemming):
+            if(self.multifield == False):
+                return self.get_stemming(term)
+            else:
+                return self.get_stemming(term, field)
+        if(self.multifield):
+            pass
+
+            
 
 
     def get_positionals(self, terms:str, index):
@@ -696,10 +720,14 @@ class SAR_Indexer:
 
         """
         pass
+
         ################
         ## COMPLETAR  ##
         ################
-
+        
+        if len(query) > 0 and query[0] != '#':
+            r = self.solve_query(query)
+            print(f'{query}\t{len(r)}')
 
 
 
