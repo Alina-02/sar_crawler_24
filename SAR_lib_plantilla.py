@@ -236,16 +236,64 @@ class SAR_Indexer:
             j = self.parse_article(line)
 
 
-        #
-        # 
-        # En la version basica solo se debe indexar el contenido "article"
-        #
-        #
-        #
+
         #################
         ### COMPLETAR ###
         #################
+        
+            txt = j['all']
+            #estoy en el documento i palabra t
+            tk = self.tokenize(txt)
 
+            #normal
+
+            if(self.positional == False):
+                for t in tk:
+                    if(t not in self.index):
+                        self.index[t] = {}
+                        self.index[t][j['url']] = 1
+                    else:
+                        if(j['url'] not in self.index[t]):
+                            self.index[t][j['url']] = 1
+                        else:
+                            self.index[t][j['url']] += 1
+
+            #multifield
+
+            if(self.multifield):
+
+                 fields_to_tokenize = ['url', 'title', 'summary', 'section-name']
+                 for field in fields_to_tokenize:
+                     tk = self.tokenize(j[field])
+
+                     for t in tk:
+                        if(t not in self.index):
+                            self.index[t] = {}
+                            self.index[t][j['url']] = 1
+                        else:
+                            if(j['url'] not in self.index[t]):
+                                self.index[t][j['url']] = 1
+                            else:
+                                self.index[t][j['url']] += 1                        
+               
+                
+            #positional
+
+            if(self.positional):
+
+                for i, t in enumerate(tk):
+                    if(t not in self.index):
+                        self.index[t] = {}
+                        self.index[t][j['url']] = []
+                        self.index[t][j['url']].append(i)
+                    else:
+                        if j['url'] not in self.index[t]:
+                            self.index[t][j['url']] = []
+                            self.index[t][j['url']].append(i)
+                        else:
+                            self.index[t][j['url']].append(i)
+
+        print(self.index['según'])
 
 
     def set_stemming(self, v:bool):
