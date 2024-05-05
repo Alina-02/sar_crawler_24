@@ -162,7 +162,7 @@ class SAR_Indexer:
         Recorre recursivamente el directorio o fichero "root" 
         NECESARIO PARA TODAS LAS VERSIONES
         
-        Recorre recursivamente el directorio "root"  y indexa su contenido
+        Recorre recursivamente el directorio "root" e indexa su contenido
         los argumentos adicionales "**args" solo son necesarios para las funcionalidades ampliadas
 
         """
@@ -190,6 +190,13 @@ class SAR_Indexer:
         ##########################################
         ## COMPLETAR PARA FUNCIONALIDADES EXTRA ##
         ##########################################
+
+        if(self.stemming):
+            self.make_stemming()
+
+        if(self.permuterm):
+            self.make_permuterm()
+        
         
         
     def parse_article(self, raw_line:str) -> Dict[str, str]:
@@ -461,6 +468,7 @@ class SAR_Indexer:
             else:
                 return self.get_stemming(term, field)
         if(self.multifield):
+
             pass
 
             
