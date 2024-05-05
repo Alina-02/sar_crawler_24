@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #! -*- encoding: utf8 -*-
 
-from SAR_Crawler_lib import SAR_Wiki_Crawler
+from SAR_Crawler_lib_plantilla import SAR_Wiki_Crawler
 import argparse
 
 if __name__ == "__main__":
