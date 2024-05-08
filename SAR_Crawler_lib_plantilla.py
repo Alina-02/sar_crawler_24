@@ -155,12 +155,15 @@ class SAR_Wiki_Crawler:
 
         document = clean_text(text)
 
-        i = 1
-        if i==1:
-            doc = self.title_sum_re.search(document)
-            print(doc)
-            print(url)
-            i+=1
+        title = self.title_sum_re.search(document).group(1)
+        sumary = self.title_sum_re.search(document).group(2)
+
+
+
+        sections = self.section_re.findall(document)
+
+
+
 
         # COMPLETAR
 
