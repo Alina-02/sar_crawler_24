@@ -153,9 +153,14 @@ class SAR_Wiki_Crawler:
         def clean_text(txt):
             return '\n'.join(l for l in txt.split('\n') if len(l) > 0)
 
-        document = None
+        document = clean_text(text)
 
-        print(text)
+        i = 1
+        if i==1:
+            doc = self.title_sum_re.search(document)
+            print(doc)
+            print(url)
+            i+=1
 
         # COMPLETAR
 
@@ -262,6 +267,8 @@ class SAR_Wiki_Crawler:
                 #el raw content es una tupla con dos elementos, el texto del articulo y la lista con urls citados
                 raw_content = self.get_wikipedia_entry_content(node_url)
 
+                parsed_content = self.parse_wikipedia_textual_content(raw_content[0],node_url)
+
                 #tras capturar el documento correctamente actualizamos numero de documentos captuados
                 total_documents_captured+=1
 
@@ -280,9 +287,6 @@ class SAR_Wiki_Crawler:
                             if url not in visited:
                                 #añadimos nuevo nodo al heap
                                 hq.heappush(queue,(node_depth+1,node_url,url))           
-        
-        print(len(visited))
-        print(total_documents_captured)
 
 
     def wikipedia_crawling_from_url(self,
