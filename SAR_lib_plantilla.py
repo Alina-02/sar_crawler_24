@@ -383,6 +383,7 @@ class SAR_Indexer:
         ## COMPLETAR PARA TODAS LAS VERSIONES ##
         ########################################
 
+
         
 
 
@@ -422,7 +423,33 @@ class SAR_Indexer:
         ########################################
         ## COMPLETAR PARA TODAS LAS VERSIONES ##
         ########################################
+        que=query.split(' ')
+        i = 0
+        postinglist=list()
+        while(i<len(que)):
+            if(i==0):
+                if(que[i]=='NOT'):
+                    postinglist = self.get_posting(que[i+1])
+                    postinglist = self.reverse_posting(que[i+1])
+                    i=i+2
+                else:
+                    postinglist=self.get_posting(que[i])
+                    i=i+1
+            aux=i
+            if(que[i+1]=='NOT'):
+                pos2 = self.get_posting(que[i+1])
+                pos2 = self.reverse_posting(que[i+1])
+                i=i+3
+            else:
+                pos2=self.get_posting(que[i])
+                i=i+2
+            if(que[aux]=='AND'):
+                postinglist=self.and_posting(postinglist,pos2)
+            else:
+                postinglist=self.or_posting(postinglist,pos2)
 
+
+        return postinglist
 
 
 
@@ -546,14 +573,15 @@ class SAR_Indexer:
 
         """
         
-        pass
         ########################################
         ## COMPLETAR PARA TODAS LAS VERSIONES ##
         ########################################
+        notlist=list()
+        for article in self.articles.keys():
+            if article not in p:
+                notlist.append(article)
 
-
-
-
+        return notlist
 
 
     def and_posting(self, p1:list, p2:list):
