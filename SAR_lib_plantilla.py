@@ -539,14 +539,14 @@ class SAR_Indexer:
             
 
 
-    def get_positionals(self, terms:str, index):
+    def get_positionals(self, terms:str, field):
         """
 
         Devuelve la posting list asociada a una secuencia de terminos consecutivos.
         NECESARIO PARA LA AMPLIACION DE POSICIONALES
 
         param:  "terms": lista con los terminos consecutivos para recuperar la posting list.
-                "index": campo sobre el que se debe recuperar la posting list, solo necesario se se hace la ampliacion de multiples indices
+                "field": campo sobre el que se debe recuperar la posting list, solo necesario se se hace la ampliacion de multiples indices
 
         return: posting list
 
@@ -554,7 +554,26 @@ class SAR_Indexer:
         ########################################################
         ## COMPLETAR PARA FUNCIONALIDAD EXTRA DE POSICIONALES ##
         ########################################################
-        pass
+        t = terms.split()
+        postinglist={}
+        if(not field):
+            for url in len(self.index[t[0]]):
+                for posicion in url:
+                    for termino in range(1,len(t)):
+                        if(url in self.index[t[termino]]):
+                            if((posicion+termino) in self.index[t[termino]][url]):
+                                if(termino == len(t)-1):
+                                    if(url not in postinglist):
+                                        postinglist[url]=[]
+                                    postinglist[url].append(posicion)
+                                    
+                            else:
+                                break
+                        else:
+                            break
+
+
+
 
     def get_stemming(self, term:str, field: Optional[str]=None):
         """
