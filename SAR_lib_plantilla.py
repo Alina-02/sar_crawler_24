@@ -390,12 +390,51 @@ class SAR_Indexer:
         Muestra estadisticas de los indices
         
         """
-        pass
         ########################################
         ## COMPLETAR PARA TODAS LAS VERSIONES ##
         ########################################
+        print("========================================")
+        print(f"Number of indexed files: {len(self.docs)}")
+        print("----------------------------------------")
+        print(f"Number of indexed articles: {len(self.articles)}")
+        print("----------------------------------------")
 
+        print("TOKENS:")
+        print(f"\t# of tokens in 'all': {len(self.index["all"])}")
+        if(self.multifield):
+            print(f"\t# of tokens in 'title': {len(self.index["title"])}")
+            print(f"\t# of tokens in 'summary': {len(self.index["summary"])}")
+            print(f"\t# of tokens in 'section-name': {len(self.index["section-name"])}")
+            print(f"\t# of tokens in 'url': {len(self.index["url"])}")
+
+        if(self.permuterm):
+            print("----------------------------------------")
+            print("PERMUTERMS:")
+            print(f"\t# of permuterms in 'all': {len(self.ptindex["all"])}")
+            if(self.multifield):
+                print(f"\t# of permuterms in 'title': {len(self.ptindex["title"])}")
+                print(f"\t# of permuterms in 'summary': {len(self.ptindex["summary"])}")
+                print(f"\t# of permuterms in 'section-name': {len(self.ptindex["section-name"])}")
+                print(f"\t# of permuterms in 'url': {len(self.ptindex["url"])}")
+
+        if(self.stemming):
+            print("----------------------------------------")
+            print("STEMS:")
+            print(f"\t# of stems in 'all': {len(self.sindex["all"])}")
+            if(self.multifield):
+                print(f"\t# of stems in 'title': {len(self.sindex["title"])}")
+                print(f"\t# of stems in 'summary': {len(self.sindex["summary"])}")
+                print(f"\t# of stems in 'section-name': {len(self.sindex["section-name"])}")
+                print(f"\t# of stems in 'url': {len(self.sindex["url"])}")
+
+        print("----------------------------------------")
+        if(self.positional):
+            print("Positional queries are allowed.")
+        else:
+            print("Positional queries are NOT allowed.")
         
+        print("========================================")
+
 
 
 
@@ -434,7 +473,33 @@ class SAR_Indexer:
         ########################################
         ## COMPLETAR PARA TODAS LAS VERSIONES ##
         ########################################
+        que=query.split(' ')
+        i = 0
+        postinglist=list()
+        while(i<len(que)):
+            if(i==0):
+                if(que[i]=='NOT'):
+                    postinglist = self.get_posting(que[i+1])
+                    postinglist = self.reverse_posting(que[i+1])
+                    i=i+2
+                else:
+                    postinglist=self.get_posting(que[i])
+                    i=i+1
+            aux=i
+            if(que[i+1]=='NOT'):
+                pos2 = self.get_posting(que[i+1])
+                pos2 = self.reverse_posting(que[i+1])
+                i=i+3
+            else:
+                pos2=self.get_posting(que[i])
+                i=i+2
+            if(que[aux]=='AND'):
+                postinglist=self.and_posting(postinglist,pos2)
+            else:
+                postinglist=self.or_posting(postinglist,pos2)
 
+
+        return postinglist
 
 
 
@@ -486,7 +551,7 @@ class SAR_Indexer:
             
 
 
-    def get_positionals(self, terms:str, index):
+    def get_positionals(self, terms:str, field):
         """
 
         Devuelve la posting list asociada a una secuencia de terminos consecutivos.
@@ -498,10 +563,28 @@ class SAR_Indexer:
         return: posting list
 
         """
-        pass
         ########################################################
         ## COMPLETAR PARA FUNCIONALIDAD EXTRA DE POSICIONALES ##
         ########################################################
+        t = terms.split()
+        postinglist={}
+        if(not field):
+            for url in len(self.index[t[0]]):
+                for posicion in url:
+                    for termino in range(1,len(t)):
+                        if(url in self.index[t[termino]]):
+                            if((posicion+termino) in self.index[t[termino]][url]):
+                                if(termino == len(t)-1):
+                                    if(url not in postinglist):
+                                        postinglist[url]=[]
+                                    postinglist[url].append(posicion)
+                                    
+                            else:
+                                break
+                        else:
+                            break
+
+
 
 
     def get_stemming(self, term:str, field: Optional[str]=None):
@@ -558,14 +641,15 @@ class SAR_Indexer:
 
         """
         
-        pass
         ########################################
         ## COMPLETAR PARA TODAS LAS VERSIONES ##
         ########################################
+        notlist=list()
+        for article in self.articles.keys():
+            if article not in p:
+                notlist.append(article)
 
-
-
-
+        return notlist
 
 
     def and_posting(self, p1:list, p2:list):
