@@ -153,22 +153,24 @@ class SAR_Wiki_Crawler:
         def clean_text(txt):
             return '\n'.join(l for l in txt.split('\n') if len(l) > 0)
 
-        document = clean_text(text)
+        document = clean_text(text) 
 
-        title = self.title_sum_re.search(document).group(1)
-        sumary = self.title_sum_re.search(document).group(2)
+        title = self.title_sum_re.search(document).group('title')
+        sumary = self.title_sum_re.search(document).group('summary')
+        rest = self.title_sum_re.search(document).group('rest')
 
+        sections = self.sections_re.findall
 
+        for s in sections:
+            match = self.section_re.search(rest)
+        print(sections.group('name'))
 
-        sections = self.section_re.findall(document)
-
-
-
+        
 
         # COMPLETAR
 
         return document
-
+        
 
     def save_documents(self,
         documents: List[dict], base_filename: str,
