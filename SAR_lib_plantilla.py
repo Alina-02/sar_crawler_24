@@ -255,15 +255,22 @@ class SAR_Indexer:
 
             #normal
 
-            if(self.positional == False | self.multifield == False):
+            #si no se quiere usar el índice posicional ni el índice multifield
+            if(self.positional == False and self.multifield == False):
+                #para cada token del documento
                 for t in tk:
+                    #comprueba si está en el índice
                     if(t not in self.index):
+                        #si no está lo añade al índice y al documento actual
                         self.index[t] = {}
                         self.index[t][j['url']] = 1
                     else:
+                        #si el documento no está en el índice del token
                         if(j['url'] not in self.index[t]):
+                            #se añade
                             self.index[t][j['url']] = 1
                         else:
+                            #si está se suma 1
                             self.index[t][j['url']] += 1
 
             #multifield
@@ -273,17 +280,23 @@ class SAR_Indexer:
                  fields_to_tokenize = ['all', 'title', 'summary', 'section-name']
                  for field in fields_to_tokenize:
                      tk = self.tokenize(j[field])
+                     
                      for t in tk:
                         if(t not in self.index):
                             self.index[t] = {}
-                            self.index[t][j['url']] = []
-                            self.index[t][j['url']].append(field)
+                            self.index[t][field] = {}
+                            self.index[t][field][j['url']] = 1
                         else:
-                            if(j['url'] not in self.index[t]):
-                                self.index[t][j['url']] = []
-                                self.index[t][j['url']].append(field)
-                            if(field not in self.index[t][j['url']]):
-                                self.index[t][j['url']].append(field)                      
+                            if(field not in self.index[t]):
+
+                                if(field == 'title'): print(t)
+                                self.index[t][field] = {}
+                                self.index[t][field][j['url']] = 1
+                            else:
+                                if(j['url'] not in self.index[t][field]):
+                                    self.index[t][field][j['url']] = 1     
+                                else:
+                                    self.index[t][field][j['url']] += 1              
 
                 
             #positional
@@ -303,7 +316,6 @@ class SAR_Indexer:
                             self.index[t][j['url']].append(i)
 
  
-        print(self.index)
 
     def set_stemming(self, v:bool):
         """
