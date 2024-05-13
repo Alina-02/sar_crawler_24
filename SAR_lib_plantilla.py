@@ -250,8 +250,13 @@ class SAR_Indexer:
         #################
         ### COMPLETAR ###
         #################
+            artId = 0;
+            
+            # si el artículo todavía no se ha analizado
             if(j['url'] not in self.urls):
-                self.articles[len(self.articles) + 1] = j['url']
+                artId = len(self.articles) + 1
+                self.articles[artId] = j['url']
+
 
             self.urls.add(j['url'])
 
@@ -271,13 +276,13 @@ class SAR_Indexer:
                         self.index[field] = {}
                     for t in tk:
                         if(t not in self.index[field]):
-                                self.index[field][t] = {}
-                                self.index[field][t][j['url']] = 1
+                                self.index[field][t] = []
+                                self.index[field][t].append(artId)
                         else:
-                            if(j['url'] not in self.index[field][t]):
-                                self.index[field][t][j['url']] = 1     
-                            else:
-                                self.index[field][t][j['url']] += 1
+                            if(artId not in self.index[field][t]):
+                                self.index[field][t].append(artId)   
+                            # else:
+                            #     self.index[field][t][j['url']] += 1
 
                 
             #positional
@@ -511,14 +516,13 @@ class SAR_Indexer:
         ########################################
         pass
 
-        if(self.positional == False & self.permuterm == False & self.permuterm == False & self.stemming == False & self.multifield == False):
-            return self.index[term]
+        return self.index['all'][term]
 
-        if(self.positional):
-            if(self.multifield == False):
-                return self.get_positionals(term)
-            else:
-                return self.get_positionals(term, field)
+        # if(self.positional):
+        #     if(self.multifield == False):
+        #         return self.get_positionals(term)
+        #     else:
+        #         return self.get_positionals(term, field)
         if(self.permuterm):
             if(self.multifield == False):
                 return self.get_permuterm(term)
@@ -655,15 +659,15 @@ class SAR_Indexer:
         ## COMPLETAR PARA TODAS LAS VERSIONES ##
         ########################################
 
-        #### SIN PROBAR 
-
         res = []
-        i, j = 0
-        while i < len(p1) & j < len(p2):
-            if p1(i) == p2(j):
-                res.append(p1(i))
+        i = 0
+        j = 0
+        while i < len(p1) and j < len(p2):
+            if p1[i] == p2[j]:
+                print(p1[i], p2[j])
+                res.append(p1[i])
                 i += 1; j += 1
-            elif p1(i) < p2(j):
+            elif p1[i] < p2[j]:
                 i += 1
             else:
                 j += 1
@@ -693,23 +697,24 @@ class SAR_Indexer:
         #### SIN PROBAR 
 
         res = []
-        i, j = 0
-        while i < len(p1) & j < len(p2):
-            if p1(i) == p2(j):
-                res.append(p1(i))
+        i = 0
+        j = 0
+        while i < len(p1) and j < len(p2):
+            if p1[i] == p2[j]:
+                res.append(p1[i])
                 i += 1; j += 1
-            elif p1(i) < p2(j):
-                res.append(p1(i))
+            elif p1[i] < p2[j]:
+                res.append(p1[i])
                 i += 1
             else:
-                res.append(p2(j))
+                res.append(p2[j])
                 j += 1
 
         while i < len(p1):
-            res.append(p1(i))
+            res.append(p1[i])
             i += 1
         while j < len(p2):
-            res.append(p2(j))
+            res.append(p2[j])
             j += 1
 
         return res
@@ -741,18 +746,19 @@ class SAR_Indexer:
         #### SIN PROBAR 
 
         res = []
-        i, j = 0
-        while i < len(p1) & j < len(p2):
-            if p1(i) == p2(j):
+        i = 0
+        j = 0
+        while i < len(p1) and j < len(p2):
+            if p1[i] == p2[j]:
                 i += 1; j += 1
-            elif p1(i) < p2(j):
-                res.append(p1(i))
+            elif p1[i] < p2[j]:
+                res.append(p1[i])
                 i += 1
             else:
                 j += 1
 
         while i < len(p1):
-            res.append(p1(i))
+            res.append(p1[i])
             i += 1
 
         return res
@@ -816,6 +822,9 @@ class SAR_Indexer:
         
         if len(query) > 0 and query[0] != '#':
             r = self.solve_query(query)
+            # r es un posting list con los resultados de la query
+
+
             print(f'{query}\t{len(r)}')
 
 
