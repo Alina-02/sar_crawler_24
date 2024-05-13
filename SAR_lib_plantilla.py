@@ -247,75 +247,52 @@ class SAR_Indexer:
         #################
         ### COMPLETAR ###
         #################
-        
-            txt = j['all']
-            #estoy en el documento i palabra t
-            tk = self.tokenize(txt)
-            
 
-            #normal
+            fields_to_tokenize = ['all']
 
-            #si no se quiere usar el índice posicional ni el índice multifield
-            if(self.positional == False and self.multifield == False):
+            if(self.multifield == True):
+                fields_to_tokenize = ['url', 'all', 'title', 'summary', 'section-name']
+
+
+
+            #si no se quiere usar el índice posicional 
+            if(self.positional == False):
+                for field in fields_to_tokenize:
+                    tk = self.tokenize(j[field])
                 #para cada token del documento
-                for t in tk:
-                    #comprueba si está en el índice
-                    if(t not in self.index):
-                        #si no está lo añade al índice y al documento actual
-                        self.index[t] = {}
-                        self.index[t][j['url']] = 1
-                    else:
-                        #si el documento no está en el índice del token
-                        if(j['url'] not in self.index[t]):
-                            #se añade
-                            self.index[t][j['url']] = 1
+                    if(field not in self.index):
+                        self.index[field] = {}
+                    for t in tk:
+                        if(t not in self.index[field]):
+                                self.index[field][t] = {}
+                                self.index[field][t][j['url']] = 1
                         else:
-                            #si está se suma 1
-                            self.index[t][j['url']] += 1
-
-            #multifield
-
-            if(self.multifield):
-
-                 fields_to_tokenize = ['all', 'title', 'summary', 'section-name']
-                 for field in fields_to_tokenize:
-                     tk = self.tokenize(j[field])
-                     
-                     for t in tk:
-                        if(t not in self.index):
-                            self.index[t] = {}
-                            self.index[t][field] = {}
-                            self.index[t][field][j['url']] = 1
-                        else:
-                            if(field not in self.index[t]):
-
-                                if(field == 'title'): print(t)
-                                self.index[t][field] = {}
-                                self.index[t][field][j['url']] = 1
+                            if(j['url'] not in self.index[field][t]):
+                                self.index[field][t][j['url']] = 1     
                             else:
-                                if(j['url'] not in self.index[t][field]):
-                                    self.index[t][field][j['url']] = 1     
-                                else:
-                                    self.index[t][field][j['url']] += 1              
+                                self.index[field][t][j['url']] += 1
 
                 
             #positional
 
-            if(self.positional):
+            if(self.positional == True):
 
-                for i, t in enumerate(tk):
-                    if(t not in self.index):
-                        self.index[t] = {}
-                        self.index[t][j['url']] = []
-                        self.index[t][j['url']].append(i)
-                    else:
-                        if j['url'] not in self.index[t]:
-                            self.index[t][j['url']] = []
-                            self.index[t][j['url']].append(i)
+               for field in fields_to_tokenize:
+                    tk = self.tokenize(j[field])
+                    if(field not in self.index):
+                        self.index[field] = {}
+                    for i, t in enumerate(tk):
+                        if(t not in self.index):
+                            self.index[field][t] = {}
+                            self.index[field][t][j['url']] = []
+                            self.index[field][t][j['url']].append(i)
                         else:
-                            self.index[t][j['url']].append(i)
+                            if j['url'] not in self.index[t]:
+                                self.index[field][t][j['url']] = []
+                                self.index[field][t][j['url']].append(i)
+                            else:
+                                self.index[field][t][j['url']].append(i)
 
- 
 
     def set_stemming(self, v:bool):
         """
