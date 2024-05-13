@@ -182,6 +182,7 @@ class SAR_Indexer:
                 for filename in sorted(files):
                     if filename.endswith('.json'):
                         fullname = os.path.join(d, filename)
+                        self.docs[len(self.docs) + 1] = fullname
                         self.index_file(fullname)
         else:
             print(f"ERROR:{root} is not a file nor directory!", file=sys.stderr)
@@ -237,8 +238,10 @@ class SAR_Indexer:
 
         dependiendo del valor de self.multifield y self.positional se debe ampliar el indexado
 
-
         """
+
+
+
         for i, line in enumerate(open(filename)):
             j = self.parse_article(line)
 
@@ -247,11 +250,15 @@ class SAR_Indexer:
         #################
         ### COMPLETAR ###
         #################
+            if(j['url'] not in self.urls):
+                self.articles[len(self.articles) + 1] = j['url']
+
+            self.urls.add(j['url'])
 
             fields_to_tokenize = ['all']
 
             if(self.multifield == True):
-                fields_to_tokenize = ['url', 'all', 'title', 'summary', 'section-name']
+                fields_to_tokenize = ['all', 'title', 'summary', 'section-name', 'url']
 
 
 
@@ -292,7 +299,7 @@ class SAR_Indexer:
                                 self.index[field][t][j['url']].append(i)
                             else:
                                 self.index[field][t][j['url']].append(i)
-
+        
 
     def set_stemming(self, v:bool):
         """
