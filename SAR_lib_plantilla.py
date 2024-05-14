@@ -56,6 +56,8 @@ class SAR_Indexer:
         self.use_stemming = False # valor por defecto, se cambia con self.set_stemming()
         self.use_ranking = False  # valor por defecto, se cambia con self.set_ranking()
 
+        self.implemented_permuterm = False # si el permuterm está implementado
+        self.implemented_positionals = False # si el positionals está implementado
 
     ###############################
     ###                         ###
@@ -263,7 +265,7 @@ class SAR_Indexer:
                 fields_to_tokenize = ['all']
 
                 if(self.multifield == True):
-                    fields_to_tokenize = ['all', 'title', 'summary', 'section-name', 'url']
+                    fields_to_tokenize = ['all', 'title', 'summary', 'section-name']
 
 
 
@@ -281,7 +283,13 @@ class SAR_Indexer:
                             else:
                                 if(artId not in self.index[field][t]):
                                     self.index[field][t].append(artId)   
-
+                    
+                    if('url' not in self.index):
+                        self.index['url'] = {}
+                    else:
+                        if(j['url'] not in self.index['url']):
+                            self.index['url'][j['url']] = []
+                            self.index['url'][j['url']].append(artId)
                     
                 #positional
 
@@ -455,6 +463,9 @@ class SAR_Indexer:
 
         """
 
+        # comprobar si hay un field indicado en la query hay que mandarlo la get
+        # posting
+
         if query is None or len(query) == 0:
             return []
 
@@ -514,21 +525,13 @@ class SAR_Indexer:
         ########################################
         pass
 
-        try:
-            self.permuterm
-        except:
-            print('No permuterm implementado')
-        else:
-            self.get_permuterm(term, field)
-
-        try:
-            self.positionals
-        except:
-            print('No positionals implementado')
-        else:
-            self.get_positionals(term, field)
-
-        if(self.use_stemming):
+        # si tiene comodines usar permuterm
+        if '*' in term or '?' in term:
+            return self.get_permuterm(term, field)
+        # si tiene dobles comillas usar posicionales
+        elif(self.implemented_positionals):
+            return self.get_positionals(term, field)
+        elif(self.use_stemming):
             return self.get_stemming(term, field)
         elif(field != None):
             return self.index[field][term]
@@ -536,9 +539,7 @@ class SAR_Indexer:
             return self.index['all'][term]
         
         
-        
-
-
+    
             
 
 
@@ -823,7 +824,6 @@ class SAR_Indexer:
         
         if len(query) > 0 and query[0] != '#':
             res = self.solve_query(query)
-            # r es un posting list con los resultados de la query
             
             i = 1
             for docId in res:
