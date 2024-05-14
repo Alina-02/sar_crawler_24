@@ -486,7 +486,7 @@ class SAR_Indexer:
                     i=i+1
             aux=i
             if(que[i+1]=='NOT'):
-                pos2 = self.get_posting(que[i+1])
+                pos2 = self.get_posting(que[i+2])
                 pos2 = self.reverse_posting(pos2)
                 i=i+3
             else:
