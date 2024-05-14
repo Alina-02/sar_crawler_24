@@ -255,56 +255,54 @@ class SAR_Indexer:
             # si el artículo todavía no se ha analizado
             if(j['url'] not in self.urls):
                 artId = len(self.articles) + 1
-                self.articles[artId] = j['url']
+                self.articles[artId] = [j['url'], j['title']]
 
 
-            self.urls.add(j['url'])
+                self.urls.add(j['url'])
 
-            fields_to_tokenize = ['all']
+                fields_to_tokenize = ['all']
 
-            if(self.multifield == True):
-                fields_to_tokenize = ['all', 'title', 'summary', 'section-name', 'url']
+                if(self.multifield == True):
+                    fields_to_tokenize = ['all', 'title', 'summary', 'section-name', 'url']
 
 
 
-            #si no se quiere usar el índice posicional 
-            if(self.positional == False):
-                for field in fields_to_tokenize:
-                    tk = self.tokenize(j[field])
-                #para cada token del documento
-                    if(field not in self.index):
-                        self.index[field] = {}
-                    for t in tk:
-                        if(t not in self.index[field]):
-                                self.index[field][t] = []
-                                self.index[field][t].append(artId)
-                        else:
-                            if(artId not in self.index[field][t]):
-                                self.index[field][t].append(artId)   
-                            # else:
-                            #     self.index[field][t][j['url']] += 1
-
-                
-            #positional
-
-            if(self.positional == True):
-
-               for field in fields_to_tokenize:
-                    tk = self.tokenize(j[field])
-                    if(field not in self.index):
-                        self.index[field] = {}
-                    for i, t in enumerate(tk):
-                        if(t not in self.index):
-                            self.index[field][t] = {}
-                            self.index[field][t][j['url']] = []
-                            self.index[field][t][j['url']].append(i)
-                        else:
-                            if j['url'] not in self.index[t]:
-                                self.index[field][t][j['url']] = []
-                                self.index[field][t][j['url']].append(i)
+                #si no se quiere usar el índice posicional 
+                if(self.positional == False):
+                    for field in fields_to_tokenize:
+                        tk = self.tokenize(j[field])
+                    #para cada token del documento
+                        if(field not in self.index):
+                            self.index[field] = {}
+                        for t in tk:
+                            if(t not in self.index[field]):
+                                    self.index[field][t] = []
+                                    self.index[field][t].append(artId)
                             else:
-                                self.index[field][t][j['url']].append(i)
-        
+                                if(artId not in self.index[field][t]):
+                                    self.index[field][t].append(artId)   
+
+                    
+                #positional
+
+                if(self.positional == True):
+
+                    for field in fields_to_tokenize:
+                            tk = self.tokenize(j[field])
+                            if(field not in self.index):
+                                self.index[field] = {}
+                            for i, t in enumerate(tk):
+                                if(t not in self.index):
+                                    self.index[field][t] = {}
+                                    self.index[field][t][j['url']] = []
+                                    self.index[field][t][j['url']].append(i)
+                                else:
+                                    if j['url'] not in self.index[t]:
+                                        self.index[field][t][j['url']] = []
+                                        self.index[field][t][j['url']].append(i)
+                                    else:
+                                        self.index[field][t][j['url']].append(i)
+            
 
     def set_stemming(self, v:bool):
         """
@@ -481,7 +479,7 @@ class SAR_Indexer:
                 pos2 = self.reverse_posting(que[i+1])
                 i=i+3
             else:
-                pos2=self.get_posting(que[i])
+                pos2=self.get_posting(que[i+1])
                 i=i+2
             if(que[aux]=='AND'):
                 postinglist=self.and_posting(postinglist,pos2)
@@ -500,7 +498,7 @@ class SAR_Indexer:
         Dependiendo de las ampliaciones implementadas "get_posting" puede llamar a:
             - self.get_positionals: para la ampliacion de posicionales
             - self.get_permuterm: para la ampliacion de permuterms
-            - self.get_stemming: para la amplaicion de stemming
+            - self.get_stemming: para la ampliacion de stemming
 
 
         param:  "term": termino del que se debe recuperar la posting list.
@@ -516,26 +514,30 @@ class SAR_Indexer:
         ########################################
         pass
 
-        return self.index['all'][term]
+        try:
+            self.permuterm
+        except:
+            print('No permuterm implementado')
+        else:
+            self.get_permuterm(term, field)
 
-        # if(self.positional):
-        #     if(self.multifield == False):
-        #         return self.get_positionals(term)
-        #     else:
-        #         return self.get_positionals(term, field)
-        if(self.permuterm):
-            if(self.multifield == False):
-                return self.get_permuterm(term)
-            else:
-                return self.get_permuterm(term, field)
-        if(self.stemming):
-            if(self.multifield == False):
-                return self.get_stemming(term)
-            else:
-                return self.get_stemming(term, field)
-        if(self.multifield):
+        try:
+            self.positionals
+        except:
+            print('No positionals implementado')
+        else:
+            self.get_positionals(term, field)
 
-            pass
+        if(self.use_stemming):
+            return self.get_stemming(term, field)
+        elif(field != None):
+            return self.index[field][term]
+        else:
+            return self.index['all'][term]
+        
+        
+        
+
 
             
 
@@ -664,7 +666,6 @@ class SAR_Indexer:
         j = 0
         while i < len(p1) and j < len(p2):
             if p1[i] == p2[j]:
-                print(p1[i], p2[j])
                 res.append(p1[i])
                 i += 1; j += 1
             elif p1[i] < p2[j]:
@@ -821,14 +822,19 @@ class SAR_Indexer:
         ################
         
         if len(query) > 0 and query[0] != '#':
-            r = self.solve_query(query)
+            res = self.solve_query(query)
             # r es un posting list con los resultados de la query
+            
+            i = 1
+            for docId in res:
+                url = self.articles[docId][0]
+                title = self.articles[docId][1]
 
+                print(f'# {i} ( {docId}) {title}:\t{url}')
+                i += 1
 
-            print(f'{query}\t{len(r)}')
-
-
-
+            print('=====================================')
+            print('Number of results:', len(res))
 
 
 
