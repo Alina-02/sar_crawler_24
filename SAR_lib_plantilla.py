@@ -577,6 +577,7 @@ class SAR_Indexer:
         ########################################################
         t = terms.split()
         postinglist={}
+
         if(not field):
             for url in len(self.index[t[0]]):
                 for posicion in url:
@@ -587,11 +588,26 @@ class SAR_Indexer:
                                     if(url not in postinglist):
                                         postinglist[url]=[]
                                     postinglist[url].append(posicion)
-                                    
                             else:
                                 break
                         else:
                             break
+        else:
+            for url in len(self.index[field][t[0]]):
+                for posicion in url:
+                    for termino in range(1,len(t)):
+                        if(url in self.index[field][t[termino]]):
+                            if((posicion+termino) in self.index[field][t[termino]][url]):
+                                if(termino == len(t)-1):
+                                    if(url not in postinglist):
+                                        postinglist[url]=[]
+                                    postinglist[url].append(posicion)
+                            else:
+                                break
+                        else:
+                            break
+        
+        return postinglist
 
 
 
