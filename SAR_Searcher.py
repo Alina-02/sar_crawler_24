@@ -40,6 +40,7 @@ if __name__ == "__main__":
     group1.add_argument('-T', '--test', dest='test', metavar= 'test', type=str, action='store',
                     help='file with queries and results, for testing.')
 
+    print(parser)
     args = parser.parse_args()
     searcher = SAR_Indexer()
     searcher.load_info(args.index)
