@@ -55,7 +55,7 @@ class SAR_Indexer:
         self.show_snippet = False # valor por defecto, se cambia con self.set_snippet()
         self.use_stemming = False # valor por defecto, se cambia con self.set_stemming()
         self.use_ranking = False  # valor por defecto, se cambia con self.set_ranking()
-
+        self.parentesis={}
 
     ###############################
     ###                         ###
@@ -446,6 +446,29 @@ class SAR_Indexer:
     ###                             ###
     ###################################
 
+    def solve_parentesis(self,ini,cont,query):
+        if(query[cont]=='('):
+            ini = cont
+        if('(' in query[cont:]):
+            cont+=1
+            query=self.solve_parentesis(ini,cont,query)
+
+        if(ini!=None and cont==ini+1):
+            if('(' in query):
+                while(len(query)>cont and query[cont]!=')'):
+                    cont+=1
+                aux=f"par{cont}"
+                self.parentesis[aux]=self.solve_query(query[ini+1:cont])
+
+                res=query[:ini]+aux+query[cont+1:]
+                return res
+            else:
+                return query
+        else:
+            return query
+
+
+
 
     def solve_query(self, query:str, prev:Dict={}):
         """
@@ -463,9 +486,6 @@ class SAR_Indexer:
 
         """
 
-        # comprobar si hay un field indicado en la query hay que mandarlo la get posting
-
-
         if query is None or len(query) == 0:
             return []
 
@@ -475,16 +495,22 @@ class SAR_Indexer:
 
         # si es positional: recorrer la query, todo aquello que haya entre comillas se trata como positional y hay que mandarlo junto
        
-        
+        if("(" in query):
+            cont=0
+            query=self.solve_parentesis(None,cont,query)
+
         que=query.split(' ')
         i = 0
-        
+
         if(que[i]=='NOT'):
             if(':' in que[i+1]):
                 field,name=que[i+1].split(':')
                 postinglist = self.get_posting(name,field)
             else:
-                postinglist = self.get_posting(que[i+1])
+                if(que[i+1] in self.parentesis):
+                    postinglist=self.parentesis[que[i+1]]
+                else:
+                    postinglist = self.get_posting(que[i+1])
             postinglist = self.reverse_posting(postinglist)
             i=i+2
         else:
@@ -492,7 +518,10 @@ class SAR_Indexer:
                 field,name=que[i].split(':')
                 postinglist = self.get_posting(name,field)
             else:
-                postinglist = self.get_posting(que[i])
+                if(que[i] in self.parentesis):
+                    postinglist=self.parentesis[que[i]]
+                else:
+                    postinglist = self.get_posting(que[i])
             i=i+1
         while(i<len(que)):
             aux=i
@@ -501,7 +530,10 @@ class SAR_Indexer:
                     field,name=que[i+2].split(':')
                     pos2 = self.get_posting(name,field)
                 else:
-                    pos2 = self.get_posting(que[i+2])
+                    if(que[i+2] in self.parentesis):
+                        pos2=self.parentesis[que[i+2]]
+                    else:
+                        pos2 = self.get_posting(que[i+2])
                 pos2 = self.reverse_posting(pos2)
                 i=i+3
             else:
@@ -509,15 +541,16 @@ class SAR_Indexer:
                     field,name=que[i+1].split(':')
                     pos2 = self.get_posting(name,field)
                 else:
-                    pos2 = self.get_posting(que[i+1])
+                    if(que[i+1] in self.parentesis):
+                        pos2=self.parentesis[que[i+1]]
+                    else:
+                        pos2 = self.get_posting(que[i+1])
                 i=i+2
 
             if(que[aux]=='AND'):
                 postinglist=self.and_posting(postinglist,pos2)
             else:
                 postinglist=self.or_posting(postinglist,pos2)
-
-
         return postinglist
 
 
