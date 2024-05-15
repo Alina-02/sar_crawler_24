@@ -463,8 +463,8 @@ class SAR_Indexer:
 
         """
 
-        # comprobar si hay un field indicado en la query hay que mandarlo la get
-        # posting
+        # comprobar si hay un field indicado en la query hay que mandarlo la get posting
+
 
         if query is None or len(query) == 0:
             return []
@@ -472,6 +472,9 @@ class SAR_Indexer:
         ########################################
         ## COMPLETAR PARA TODAS LAS VERSIONES ##
         ########################################
+
+        # si es positional: recorrer la query, todo aquello que haya entre comillas se trata como positional y hay que mandarlo junto
+       
         
         que=query.split(' ')
         i = 0
@@ -546,6 +549,8 @@ class SAR_Indexer:
         if '*' in term or '?' in term:
             return self.get_permuterm(term, field)
         # si tiene dobles comillas usar posicionales
+        elif(term[0] == '"'):
+            return self.get_positionals(term, field)
         elif(self.use_stemming):
             return self.get_stemming(term, field)
         elif(field != None):
