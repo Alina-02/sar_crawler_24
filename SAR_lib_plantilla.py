@@ -353,7 +353,17 @@ class SAR_Indexer:
 
 
         """
-        
+        fields_to_tokenize = ['all']
+        if(self.multifield == True):
+            fields_to_tokenize = ['all', 'title', 'summary', 'section-name']
+        for field,k in fields_to_tokenize:
+            self.sindex[field] = {}
+            for token in self.index[field]:
+                stemtoken = self.stemmer.stem(token)
+                if stemtoken not in self.sindex[field]:
+                    self.sindex[field][stemtoken] = self.index[field][token]
+                else:
+                    self.sindex[field][stemtoken] = list(set(self.sindex[field][stemtoken]).union(set(self.index[field][token])))
         pass
         ####################################################
         ## COMPLETAR PARA FUNCIONALIDAD EXTRA DE STEMMING ##
@@ -662,7 +672,11 @@ class SAR_Indexer:
         """
         
         stem = self.stemmer.stem(term)
-
+        field = "all" if field is None else field
+        if(stem in self.sindex["all"]):
+            return self.sindex["all"][stem]
+        else:
+            return []
         ####################################################
         ## COMPLETAR PARA FUNCIONALIDAD EXTRA DE STEMMING ##
         ####################################################
