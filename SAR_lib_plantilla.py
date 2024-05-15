@@ -56,8 +56,6 @@ class SAR_Indexer:
         self.use_stemming = False # valor por defecto, se cambia con self.set_stemming()
         self.use_ranking = False  # valor por defecto, se cambia con self.set_ranking()
 
-        self.implemented_permuterm = False # si el permuterm está implementado
-        self.implemented_positionals = False # si el positionals está implementado
 
     ###############################
     ###                         ###

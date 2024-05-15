@@ -41,7 +41,6 @@ if __name__ == "__main__":
                     help='file with queries and results, for testing.')
 
     args = parser.parse_args()
-
     searcher = SAR_Indexer()
     searcher.load_info(args.index)
     searcher.set_stemming(args.stem)
