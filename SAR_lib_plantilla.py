@@ -56,8 +56,6 @@ class SAR_Indexer:
         self.use_stemming = False # valor por defecto, se cambia con self.set_stemming()
         self.use_ranking = False  # valor por defecto, se cambia con self.set_ranking()
 
-        self.implemented_permuterm = False # si el permuterm está implementado
-        self.implemented_positionals = False # si el positionals está implementado
 
     ###############################
     ###                         ###
@@ -259,7 +257,6 @@ class SAR_Indexer:
                 artId = len(self.articles) + 1
                 self.articles[artId] = [j['url'], j['title']]
 
-
                 self.urls.add(j['url'])
 
                 fields_to_tokenize = ['all']
@@ -295,21 +292,24 @@ class SAR_Indexer:
 
                 if(self.positional == True):
 
+                    
                     for field in fields_to_tokenize:
-                            tk = self.tokenize(j[field])
-                            if(field not in self.index):
-                                self.index[field] = {}
-                            for i, t in enumerate(tk):
-                                if(t not in self.index):
-                                    self.index[field][t] = {}
-                                    self.index[field][t][j['url']] = []
-                                    self.index[field][t][j['url']].append(i)
+                        tk = self.tokenize(j[field])
+                        if(field not in self.index):
+                            self.index[field] = {}
+                        i = 0
+                        for i, t in enumerate(tk):
+                            if(t not in self.index):
+                                self.index[field][t] = {}
+                                self.index[field][t][artId] = []
+                                self.index[field][t][artId].append(i)
+                            else:
+                                if j['url'] not in self.index[t]:
+                                    self.index[field][t][artId] = []
+                                    self.index[field][t][artId].append(i)
                                 else:
-                                    if j['url'] not in self.index[t]:
-                                        self.index[field][t][j['url']] = []
-                                        self.index[field][t][j['url']].append(i)
-                                    else:
-                                        self.index[field][t][j['url']].append(i)
+                                    self.index[field][t][artId].append(i)
+                        i+=1
             
 
     def set_stemming(self, v:bool):
@@ -473,8 +473,8 @@ class SAR_Indexer:
 
         """
 
-        # comprobar si hay un field indicado en la query hay que mandarlo la get
-        # posting
+        # comprobar si hay un field indicado en la query hay que mandarlo la get posting
+
 
         if query is None or len(query) == 0:
             return []
@@ -482,6 +482,9 @@ class SAR_Indexer:
         ########################################
         ## COMPLETAR PARA TODAS LAS VERSIONES ##
         ########################################
+
+        # si es positional: recorrer la query, todo aquello que haya entre comillas se trata como positional y hay que mandarlo junto
+       
         
         que=query.split(' ')
         i = 0
@@ -556,7 +559,7 @@ class SAR_Indexer:
         if '*' in term or '?' in term:
             return self.get_permuterm(term, field)
         # si tiene dobles comillas usar posicionales
-        elif(self.implemented_positionals):
+        elif(term[0] == '"'):
             return self.get_positionals(term, field)
         elif(self.use_stemming):
             return self.get_stemming(term, field)
@@ -587,6 +590,7 @@ class SAR_Indexer:
         ########################################################
         t = terms.split()
         postinglist={}
+
         if(not field):
             for url in len(self.index[t[0]]):
                 for posicion in url:
@@ -597,11 +601,26 @@ class SAR_Indexer:
                                     if(url not in postinglist):
                                         postinglist[url]=[]
                                     postinglist[url].append(posicion)
-                                    
                             else:
                                 break
                         else:
                             break
+        else:
+            for url in len(self.index[field][t[0]]):
+                for posicion in url:
+                    for termino in range(1,len(t)):
+                        if(url in self.index[field][t[termino]]):
+                            if((posicion+termino) in self.index[field][t[termino]][url]):
+                                if(termino == len(t)-1):
+                                    if(url not in postinglist):
+                                        postinglist[url]=[]
+                                    postinglist[url].append(posicion)
+                            else:
+                                break
+                        else:
+                            break
+        
+        return postinglist
 
 
 
