@@ -326,7 +326,7 @@ class SAR_Indexer:
                             else:
                                 self.index['url'][t][artId].append(0)
         
-        print(self.index['url'])
+
 
     def set_stemming(self, v:bool):
         """
