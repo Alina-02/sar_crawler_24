@@ -311,7 +311,14 @@ class SAR_Indexer:
                                     self.index[field][t][artId].append(i)
                             i+=1
 
-        # print(self.positional['all']['suma'])
+                    if('url' not in self.index):
+                        self.index['url'] = {}
+                    else:
+                        if(j['url'] not in self.index['url']):
+                            self.index['url'][j['url']] = []
+                            self.index['url'][j['url']].append(0)
+                        else:
+                            self.index['url'][j['url']].append(0)
             
 
     def set_stemming(self, v:bool):
