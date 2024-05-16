@@ -412,7 +412,7 @@ class SAR_Indexer:
             print(f"\t# of tokens in 'title': {len(self.index['title'])}")
             print(f"\t# of tokens in 'summary': {len(self.index['summary'])}")
             print(f"\t# of tokens in 'section-name': {len(self.index['section-name'])}")
-            print(f"\t# of tokens in 'url': {len(self.index['url'])}")
+            print(f"\t# of tokens in 'url': {len(self.articles)}")
 
 
         if(self.permuterm):
@@ -510,6 +510,7 @@ class SAR_Indexer:
         cont = 0
         pos=0
         ini=0
+
         while('"' in query):
             if(query[cont]=='"' and pos==0):
                 ini=cont
@@ -520,7 +521,6 @@ class SAR_Indexer:
                 self.parpos[aux]=self.get_posting(query[ini:cont+1])
                 query=query[:ini]+aux+query[cont+1:]
             cont+=1
-
 
         if("(" in query):
             cont=0
