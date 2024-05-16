@@ -75,6 +75,7 @@ if __name__ == "__main__":
         # se debe contar o mostrar resultados?
         if args.count is True:
             searcher.solve_and_count([args.query])
+            
         else:
             searcher.solve_and_show(args.query)
 

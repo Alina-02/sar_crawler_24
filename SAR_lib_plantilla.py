@@ -299,17 +299,19 @@ class SAR_Indexer:
                             self.index[field] = {}
                         i = 0
                         for i, t in enumerate(tk):
-                            if(t not in self.index):
+                            if(t not in self.index[field]):
                                 self.index[field][t] = {}
                                 self.index[field][t][artId] = []
                                 self.index[field][t][artId].append(i)
                             else:
-                                if j['url'] not in self.index[t]:
+                                if artId not in self.index[field][t]:
                                     self.index[field][t][artId] = []
                                     self.index[field][t][artId].append(i)
                                 else:
                                     self.index[field][t][artId].append(i)
-                        i+=1
+                            i+=1
+
+        # print(self.positional['all']['suma'])
             
 
     def set_stemming(self, v:bool):
