@@ -593,13 +593,15 @@ class SAR_Indexer:
 
             if(que[aux]=='AND'):
                 if(isinstance(postinglist,dict)):
-                    postinglist=postinglist.keys()
-                    pos2=pos2.keys()
+                    postinglist=list(postinglist.keys())
+                if(isinstance(pos2,dict)):
+                    pos2=list(pos2.keys())
                 postinglist=self.and_posting(postinglist,pos2)
             else:
                 if(isinstance(postinglist,dict)):
-                    postinglist=postinglist.keys()
-                    pos2=pos2.keys()
+                    postinglist=list(postinglist.keys())
+                if(isinstance(pos2,dict)):
+                    pos2=list(pos2.keys())
                 postinglist=self.or_posting(postinglist,pos2)
 
         return postinglist
