@@ -556,16 +556,15 @@ class SAR_Indexer:
 
         que=query.split(' ')
         
-        cons=['AND','OR','NOT']
         i=0
 
         while(i<len(que)-1):
-            if(que[i] not in cons and que[i+1] not in cons):
+            if(que[i] not in ['AND','OR','NOT'] and que[i+1] not in ['AND','OR']):
                 que.insert(i+1,'AND')
             i+=1
 
         i = 0
-
+        print(que)
         if(que[i]=='NOT'):
             if(':' in que[i+1]):
                 field,name=que[i+1].split(':')
