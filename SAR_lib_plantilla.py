@@ -275,21 +275,20 @@ class SAR_Indexer:
                         if(field not in self.index):
                             self.index[field] = {}
                         for t in tk:
-                            self.index[field][t]=self.index[field].get(t,[]).append(artId)
-                        #    if(t not in self.index[field]):
-                        #            self.index[field][t] = []
-                        #            self.index[field][t].append(artId)
-                        #    else:
-                        #        if(artId not in self.index[field][t]):
-                        #            self.index[field][t].append(artId)   
+                            if(t not in self.index[field]):
+                                    self.index[field][t] = []
+                                    self.index[field][t].append(artId)
+                            else:
+                                if(artId not in self.index[field][t]):
+                                    self.index[field][t].append(artId)   
                     
                     if('url' not in self.index):
                         self.index['url'] = {}
                     else:
-                        self.index['url'][j['url']]=self.index['url'].get(j['url'],[]).append(artId)
-                        #if(j['url'] not in self.index['url']):
-                        #    self.index['url'][j['url']] = []
-                        #    self.index['url'][j['url']].append(artId)
+                        if(j['url'] not in self.index['url']):
+                            self.index['url'][j['url']] = []
+                            self.index['url'][j['url']].append(artId)
+                        
                     
                 #positional
 
@@ -304,32 +303,33 @@ class SAR_Indexer:
                         for i, t in enumerate(tk):
                             if(t not in self.index[field]):
                                 self.index[field][t] = {}
-                           #    self.index[field][t][artId] = []
-                           #    self.index[field][t][artId].append(i)
-                           # else:
-                           #    if artId not in self.index[field][t]:
-                           #        self.index[field][t][artId] = []
-                           #        self.index[field][t][artId].append(i)
-                           #    else:
-                           #        self.index[field][t][artId].append(i)
-                            self.index[field][t][artId]=self.index[field][t].get(artId,[]).append(i)
+                                self.index[field][t][artId] = []
+                                self.index[field][t][artId].append(i)
+                            else:
+                                if artId not in self.index[field][t]:
+                                    self.index[field][t][artId] = []
+                                    self.index[field][t][artId].append(i)
+                                else:
+                                    self.index[field][t][artId].append(i)
+
                             i+=1
                     
                     t = j['url']
+                    
                     if('url' not in self.index):
                         self.index['url'] = {}
                     else:
                         if(t not in self.index['url']):
                             self.index['url'][t] = {}
-                        self.index['url'][t][artId]=self.index['url'][t].get(artId,[]).append(0)
-#                            self.index['url'][t][artId] = []
-#                            self.index['url'][t][artId].append(0)
-#                        else:
-#                            if artId not in self.index['url'][t]:
-#                                self.index['url'][t][artId] = []
-#                                self.index['url'][t][artId].append(0)
-#                            else:
-#                                self.index['url'][t][artId].append(0)
+                            self.index['url'][t][artId] = []
+                            self.index['url'][t][artId].append(0)
+                        else:
+                            if artId not in self.index['url'][t]:
+                                self.index['url'][t][artId] = []
+                                self.index['url'][t][artId].append(0)
+                            else:
+                                self.index['url'][t][artId].append(0)
+
 
 
     def set_stemming(self, v:bool):
