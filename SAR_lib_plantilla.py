@@ -239,8 +239,14 @@ class SAR_Indexer:
         dependiendo del valor de self.multifield y self.positional se debe ampliar el indexado
 
         """
+        fields_to_tokenize = []
 
-
+        if(self.multifield == True):
+            for field in self.fields:
+                if field[1]:
+                    fields_to_tokenize.append(field[0])
+        else:
+            fields_to_tokenize.append(self.def_field)
 
         for i, line in enumerate(open(filename)):
             j = self.parse_article(line)
@@ -259,14 +265,6 @@ class SAR_Indexer:
 
                 self.urls.add(j['url'])
 
-                fields_to_tokenize = ['all']
-
-                if(self.multifield == True):
-                    fields_to_tokenize = []
-                    for field in self.fields:
-                        if field[1]:
-                            fields_to_tokenize.append(field[0])
-
 
 
                 #si no se quiere usar el índice posicional 
@@ -277,19 +275,21 @@ class SAR_Indexer:
                         if(field not in self.index):
                             self.index[field] = {}
                         for t in tk:
-                            if(t not in self.index[field]):
-                                    self.index[field][t] = []
-                                    self.index[field][t].append(artId)
-                            else:
-                                if(artId not in self.index[field][t]):
-                                    self.index[field][t].append(artId)   
+                            self.index[field][t]=self.index[field].get(t,[]).append(artId)
+                        #    if(t not in self.index[field]):
+                        #            self.index[field][t] = []
+                        #            self.index[field][t].append(artId)
+                        #    else:
+                        #        if(artId not in self.index[field][t]):
+                        #            self.index[field][t].append(artId)   
                     
                     if('url' not in self.index):
                         self.index['url'] = {}
                     else:
-                        if(j['url'] not in self.index['url']):
-                            self.index['url'][j['url']] = []
-                            self.index['url'][j['url']].append(artId)
+                        self.index['url'][j['url']]=self.index['url'].get(j['url'],[]).append(artId)
+                        #if(j['url'] not in self.index['url']):
+                        #    self.index['url'][j['url']] = []
+                        #    self.index['url'][j['url']].append(artId)
                     
                 #positional
 
@@ -304,14 +304,15 @@ class SAR_Indexer:
                         for i, t in enumerate(tk):
                             if(t not in self.index[field]):
                                 self.index[field][t] = {}
-                                self.index[field][t][artId] = []
-                                self.index[field][t][artId].append(i)
-                            else:
-                                if artId not in self.index[field][t]:
-                                    self.index[field][t][artId] = []
-                                    self.index[field][t][artId].append(i)
-                                else:
-                                    self.index[field][t][artId].append(i)
+                           #    self.index[field][t][artId] = []
+                           #    self.index[field][t][artId].append(i)
+                           # else:
+                           #    if artId not in self.index[field][t]:
+                           #        self.index[field][t][artId] = []
+                           #        self.index[field][t][artId].append(i)
+                           #    else:
+                           #        self.index[field][t][artId].append(i)
+                            self.index[field][t][artId]=self.index[field][t].get(artId,[]).append(i)
                             i+=1
                     
                     t = j['url']
