@@ -637,7 +637,7 @@ class SAR_Indexer:
         ########################################################
         ## COMPLETAR PARA FUNCIONALIDAD EXTRA DE POSICIONALES ##
         ########################################################
-        t = terms.split()
+        t = terms[1:len(t)-1].split()
         postinglist={}
 
         if(not field):
