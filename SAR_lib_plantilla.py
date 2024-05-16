@@ -382,13 +382,11 @@ class SAR_Indexer:
             for token in self.index[field]:
                 stemtoken = self.stemmer.stem(token)
                 if stemtoken not in self.sindex[field]:
-                        self.sindex[field][stemtoken] = list(self.index[field][token])
+                    self.sindex[field][stemtoken] = list(self.index[field][token])
                 else:
                     self.sindex[field][stemtoken] = list(set(self.sindex[field][stemtoken]).union(set(self.index[field][token])))
         pass
-        ####################################################
-        ## COMPLETAR PARA FUNCIONALIDAD EXTRA DE STEMMING ##
-        ####################################################
+
 
 
     
@@ -420,9 +418,7 @@ class SAR_Indexer:
                     else:
                         self.ptindex[field][j].append(i)
         pass
-        ####################################################
-        ## COMPLETAR PARA FUNCIONALIDAD EXTRA DE STEMMING ##
-        ####################################################
+
 
 
 
@@ -758,9 +754,6 @@ class SAR_Indexer:
             return self.sindex[field][stem]
         else:
             return []
-        ####################################################
-        ## COMPLETAR PARA FUNCIONALIDAD EXTRA DE STEMMING ##
-        ####################################################
 
     def get_permuterm(self, term:str, field:Optional[str]=None):
         """
