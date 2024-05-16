@@ -321,15 +321,15 @@ class SAR_Indexer:
                     else:
                         if(t not in self.index['url']):
                             self.index['url'][t] = {}
-                            self.index['url'][t][artId] = []
-                            self.index['url'][t][artId].append(0)
-                        else:
-                            if artId not in self.index['url'][t]:
-                                self.index['url'][t][artId] = []
-                                self.index['url'][t][artId].append(0)
-                            else:
-                                self.index['url'][t][artId].append(0)
-        
+                        self.index['url'][t][artId]=self.index['url'][t].get(artId,[]).append(0)
+#                            self.index['url'][t][artId] = []
+#                            self.index['url'][t][artId].append(0)
+#                        else:
+#                            if artId not in self.index['url'][t]:
+#                                self.index['url'][t][artId] = []
+#                                self.index['url'][t][artId].append(0)
+#                            else:
+#                                self.index['url'][t][artId].append(0)
 
 
     def set_stemming(self, v:bool):
@@ -475,6 +475,15 @@ class SAR_Indexer:
     ###   PARTE 2.1: RECUPERACION   ###
     ###                             ###
     ###################################
+    def hashkey(self,query:str,cont:int):
+        key = 0
+        for c in query:
+            key+=ord(c)
+
+        while(key in self.parpos):
+            key+=cont
+
+        return f"{key}"
 
     def solve_parpos(self,ini,cont,query):
         if(query[cont]=='('):
@@ -488,11 +497,11 @@ class SAR_Indexer:
                 while(query[cont]!=')'):
                     cont+=1
                 
-                aux=f"par{cont}"
-                self.parpos[aux]=self.solve_query(query[ini+1:cont])
+                key = self.hashkey(query[ini+1:cont],cont)
+                self.parpos[key]=self.solve_query(query[ini+1:cont])
 
 
-                return query[:ini]+aux+query[cont+1:]
+                return query[:ini]+key+query[cont+1:]
             else:
                 return query
         else:
@@ -535,16 +544,26 @@ class SAR_Indexer:
                 pos=1
             elif(query[cont]=='"' and pos==1):
                 pos=0
-                aux=f"pos{cont}"
-                self.parpos[aux]=self.get_posting(query[ini:cont+1])
-                query=query[:ini]+aux+query[cont+1:]
+                key = self.hashkey(query[ini+1:cont],cont)
+                self.parpos[key]=self.get_posting(query[ini:cont+1])
+                query=query[:ini]+key+query[cont+1:]
             cont+=1
+        
 
         if("(" in query):
             cont=0
             query=self.solve_parpos(None,cont,query)
 
         que=query.split(' ')
+        
+        cons=['AND','OR','NOT']
+        i=0
+
+        while(i<len(que)-1):
+            if(que[i] not in cons and que[i+1] not in cons):
+                que.insert(i+1,'AND')
+            i+=1
+
         i = 0
 
         if(que[i]=='NOT'):
