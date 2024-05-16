@@ -23,7 +23,7 @@ class SAR_Indexer:
     # lista de campos, el booleano indica si se debe tokenizar el campo
     # NECESARIO PARA LA AMPLIACION MULTIFIELD
     fields = [
-        ("all", True), ("title", True), ("summary", True), ("section-name", True), ('url', False),
+        ("all", True), ("title", True), ("summary", True), ("section-name", True), ('url', False)
     ]
     def_field = 'all'
     PAR_MARK = '%'
@@ -262,7 +262,10 @@ class SAR_Indexer:
                 fields_to_tokenize = ['all']
 
                 if(self.multifield == True):
-                    fields_to_tokenize = ['all', 'title', 'summary', 'section-name']
+                    fields_to_tokenize = []
+                    for field in self.fields:
+                        if field[1]:
+                            fields_to_tokenize.append(field[0])
 
 
 
@@ -657,8 +660,8 @@ class SAR_Indexer:
         postinglist={}
 
         if(not field):
-            for url in len(self.index[self.def_field][t[0]]):
-                for posicion in url:
+            for url in self.index[self.def_field][t[0]]:
+                for posicion in self.index[self.def_field][t[0]][url]:
                     for termino in range(1,len(t)):
                         if(url in self.index[self.def_field][t[termino]]):
                             if((posicion+termino) in self.index[self.def_field][t[termino]][url]):
@@ -671,8 +674,8 @@ class SAR_Indexer:
                         else:
                             break
         else:
-            for url in len(self.index[field][t[0]]):
-                for posicion in url:
+            for url in self.index[field][t[0]]:
+                for posicion in self.index[field][t[0]][url]:
                     for termino in range(1,len(t)):
                         if(url in self.index[field][t[termino]]):
                             if((posicion+termino) in self.index[field][t[termino]][url]):
