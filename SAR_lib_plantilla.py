@@ -310,16 +310,23 @@ class SAR_Indexer:
                                 else:
                                     self.index[field][t][artId].append(i)
                             i+=1
-
+                    
+                    t = j['url']
                     if('url' not in self.index):
                         self.index['url'] = {}
                     else:
-                        if(j['url'] not in self.index['url']):
-                            self.index['url'][j['url']] = []
-                            self.index['url'][j['url']].append(0)
+                        if(t not in self.index['url']):
+                            self.index['url'][t] = {}
+                            self.index['url'][t][artId] = []
+                            self.index['url'][t][artId].append(0)
                         else:
-                            self.index['url'][j['url']].append(0)
-            
+                            if artId not in self.index['url'][t]:
+                                self.index['url'][t][artId] = []
+                                self.index['url'][t][artId].append(0)
+                            else:
+                                self.index['url'][t][artId].append(0)
+        
+        print(self.index['url'])
 
     def set_stemming(self, v:bool):
         """
