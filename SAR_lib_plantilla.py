@@ -365,7 +365,9 @@ class SAR_Indexer:
                 if stemtoken not in self.sindex[field]:
                     self.sindex[field][stemtoken] = list(self.index[field][token])
                 else:
-                    self.sindex[field][stemtoken] = list(set(self.sindex[field][stemtoken]).union(set(self.index[field][token])))
+                    self.sindex[field][stemtoken].extend(self.index[field][token])
+            for stemtoken in self.sindex[field]:
+                self.sindex[field][stemtoken] = list(sorted(set(self.sindex[field][stemtoken])))
         pass
 
 
@@ -783,13 +785,13 @@ class SAR_Indexer:
             if '*' in perm:
                 aux = []
                 for i in self.ptindex[field][perm[:-1]]:
-                    aux = aux + list(self.index[field][i])
+                    aux.extend(list(self.index[field][i]))
                 return list(set(aux))
             else:
                 aux = []
                 for i in self.ptindex[field][perm[:-1]]:
                     if len(i) == len(perm)-1:
-                        aux = aux + list(self.index[field][i])
+                        aux.extend(list(self.index[field][i]))
                 return list(set(aux))
         pass
 
