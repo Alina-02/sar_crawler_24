@@ -558,9 +558,9 @@ class SAR_Indexer:
                     self.parpos[key]=self.get_posting(query[ini:cont+1])
                 if(field is not None):
                     query=query[:field]+key+query[cont+1:]
+                    field=None
                 else:
                     query=query[:ini]+key+query[cont+1:]
-                field=None
             cont+=1
 
         que=query.split(' ')
