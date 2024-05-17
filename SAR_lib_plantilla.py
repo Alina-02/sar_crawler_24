@@ -548,10 +548,11 @@ class SAR_Indexer:
         ## COMPLETAR PARA TODAS LAS VERSIONES ##
         ########################################
 
-        # si es positional: recorrer la query, todo aquello que haya entre comillas se trata como positional y hay que mandarlo junto
-        cont = 0
-        pos=0
-        ini=0
+              
+        if("(" in query):
+            query=self.solve_parpos(None,0,query)
+        
+        cont = 0; pos=0; ini=0
 
         while('"' in query):
             if(query[cont]=='"' and pos==0):
@@ -563,11 +564,6 @@ class SAR_Indexer:
                 self.parpos[key]=self.get_posting(query[ini:cont+1])
                 query=query[:ini]+key+query[cont+1:]
             cont+=1
-        
-
-        if("(" in query):
-            cont=0
-            query=self.solve_parpos(None,cont,query)
 
         que=query.split(' ')
         i = 0
