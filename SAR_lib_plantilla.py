@@ -23,7 +23,7 @@ class SAR_Indexer:
     # lista de campos, el booleano indica si se debe tokenizar el campo
     # NECESARIO PARA LA AMPLIACION MULTIFIELD
     fields = [
-        ("all", True), ("title", True), ("summary", True), ("section-name", True), ('url', False)
+        ("all", True), ("title", True), ("summary", True), ("section-name", True), ('url', True)
     ]
     def_field = 'all'
     PAR_MARK = '%'
@@ -425,33 +425,33 @@ class SAR_Indexer:
         print("----------------------------------------")
 
         print("TOKENS:")
-        print('\t# of tokens in "all":', len(self.index["all"]))
         if(self.multifield):
-            print(f"\t# of tokens in 'title': {len(self.index['title'])}")
-            print(f"\t# of tokens in 'summary': {len(self.index['summary'])}")
-            print(f"\t# of tokens in 'section-name': {len(self.index['section-name'])}")
-            print(f"\t# of tokens in 'url': {len(self.articles)}")
+            for field in self.fields:
+                if field[1]:
+                    print(f'\t# of tokens in "{field[0]}": {len(self.index[field[0]])}')
+        else:
+            print('\t# of tokens in "all":', len(self.index["all"]))
 
 
         if(self.permuterm):
             print("----------------------------------------")
             print("PERMUTERMS:")
-            print('\t# of permuterms in "all":', len(self.index["all"]))
             if(self.multifield):
-                print(f"\t# of permuterms in 'title': {len(self.index['title'])}")
-                print(f"\t# of permuterms in 'summary': {len(self.index['summary'])}")
-                print(f"\t# of permuterms in 'section-name': {len(self.index['section-name'])}")
-                print(f"\t# of permuterms in 'url': {len(self.index['url'])}")
+                for field in self.fields:
+                    if field[1]:
+                        print(f'\t# of permuterms in "{field[0]}": {len(self.ptindex[field[0]])}')
+            else:
+                print('\t# of permuterms in "all":', len(self.ptindex["all"]))
 
         if(self.stemming):
             print("----------------------------------------")
             print("STEMS:")
-            print('\t# of stems in "all":', len(self.index["all"]))
             if(self.multifield):
-                print(f"\t# of stems in 'title': {len(self.index['title'])}")
-                print(f"\t# of stems in 'summary': {len(self.index['summary'])}")
-                print(f"\t# of stems in 'section-name': {len(self.index['section-name'])}")
-                print(f"\t# of stems in 'url': {len(self.index['url'])}")
+                for field in self.fields:
+                    if field[1]:
+                        print(f'\t# of stems in "{field[0]}": {len(self.sindex[field[0]])}')
+            else:
+                print('\t# of stems in "all":', len(self.sindex["all"]))
 
         print("----------------------------------------")
         if(self.positional):
@@ -564,7 +564,7 @@ class SAR_Indexer:
             i+=1
 
         i = 0
-        print(que)
+        
         if(que[i]=='NOT'):
             if(':' in que[i+1]):
                 field,name=que[i+1].split(':')
