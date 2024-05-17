@@ -539,7 +539,7 @@ class SAR_Indexer:
         
         cont = 0; pos=0; ini=0; field=None
 
-        while('"' in query):
+        while('"' in query and len(query)>cont):
             if(cont == 0 and query[cont]!='"'):
                 field = cont
             if(query[cont]==' ' and pos==0):
@@ -561,6 +561,7 @@ class SAR_Indexer:
                     field=None
                 else:
                     query=query[:ini]+key+query[cont+1:]
+                    
             cont+=1
 
         que=query.split(' ')
