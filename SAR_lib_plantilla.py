@@ -540,8 +540,10 @@ class SAR_Indexer:
         cont = 0; pos=0; ini=0; field=None
 
         while('"' in query):
+            if(cont == 0 and query[cont]!='"'):
+                field = cont
             if(query[cont]==' ' and pos==0):
-                field = cont+1
+                field=cont+1
             if(query[cont]=='"' and pos==0):
                 ini=cont
                 pos=1
@@ -551,7 +553,7 @@ class SAR_Indexer:
                 pos=0
                 key = self.hashkey(query[ini+1:cont],cont)
                 if(field is not None):
-                    self.parpos[key]=self.get_posting(query[ini:cont+1],query[field:ini])
+                    self.parpos[key]=self.get_posting(query[ini:cont+1],query[field:ini-1])
                 else:
                     self.parpos[key]=self.get_posting(query[ini:cont+1])
                 if(field is not None):
