@@ -23,7 +23,7 @@ class SAR_Indexer:
     # lista de campos, el booleano indica si se debe tokenizar el campo
     # NECESARIO PARA LA AMPLIACION MULTIFIELD
     fields = [
-        ("all", True), ("title", True), ("summary", True), ("section-name", True), ('url', False)
+        ("all", True), ("title", True), ("summary", True), ("section-name", True), ('url', True)
     ]
     def_field = 'all'
     PAR_MARK = '%'
@@ -358,21 +358,20 @@ class SAR_Indexer:
 
 
         """
-        fields_to_tokenize = ['all']
         if(self.multifield == True):
             fields_to_tokenize = ['all', 'title', 'summary', 'section-name']
-        for field,k in fields_to_tokenize:
+        else:
+            fields_to_tokenize = ['all']
+        for field in fields_to_tokenize:
             self.sindex[field] = {}
             for token in self.index[field]:
                 stemtoken = self.stemmer.stem(token)
                 if stemtoken not in self.sindex[field]:
-                    self.sindex[field][stemtoken] = self.index[field][token]
+                    self.sindex[field][stemtoken] = list(self.index[field][token])
                 else:
                     self.sindex[field][stemtoken] = list(set(self.sindex[field][stemtoken]).union(set(self.index[field][token])))
         pass
-        ####################################################
-        ## COMPLETAR PARA FUNCIONALIDAD EXTRA DE STEMMING ##
-        ####################################################
+
 
 
     
@@ -383,12 +382,28 @@ class SAR_Indexer:
 
         NECESARIO PARA LA AMPLIACION DE PERMUTERM
 
-
         """
+        if(self.multifield == True):
+            fields_to_tokenize = ['all', 'title', 'summary', 'section-name']
+        else:
+            fields_to_tokenize = ['all']
+
+        for field in fields_to_tokenize:
+            self.ptindex[field] = {}
+            for i in self.index[field]:
+                cadena = "".join([i,"$"])
+                aux = [cadena]
+                for j in range(len(cadena)-1):
+                    cadena = "".join([cadena[-1:],cadena[:-1]])
+                    aux.append(cadena)
+                res = [x[i:j] for x in aux for i in range(len(x)) for j in range(i + 1, len(x) + 1) if j-i >= 2 and '$' in x[i:j]]
+                for j in set(res):
+                    if j not in self.ptindex[field]:
+                        self.ptindex[field][j] = [i]
+                    else:
+                        self.ptindex[field][j].append(i)
         pass
-        ####################################################
-        ## COMPLETAR PARA FUNCIONALIDAD EXTRA DE STEMMING ##
-        ####################################################
+
 
 
 
@@ -410,33 +425,33 @@ class SAR_Indexer:
         print("----------------------------------------")
 
         print("TOKENS:")
-        print('\t# of tokens in "all":', len(self.index["all"]))
         if(self.multifield):
-            print(f"\t# of tokens in 'title': {len(self.index['title'])}")
-            print(f"\t# of tokens in 'summary': {len(self.index['summary'])}")
-            print(f"\t# of tokens in 'section-name': {len(self.index['section-name'])}")
-            print(f"\t# of tokens in 'url': {len(self.articles)}")
+            for field in self.fields:
+                if field[1]:
+                    print(f'\t# of tokens in "{field[0]}": {len(self.index[field[0]])}')
+        else:
+            print('\t# of tokens in "all":', len(self.index["all"]))
 
 
         if(self.permuterm):
             print("----------------------------------------")
             print("PERMUTERMS:")
-            print('\t# of permuterms in "all":', len(self.index["all"]))
             if(self.multifield):
-                print(f"\t# of permuterms in 'title': {len(self.index['title'])}")
-                print(f"\t# of permuterms in 'summary': {len(self.index['summary'])}")
-                print(f"\t# of permuterms in 'section-name': {len(self.index['section-name'])}")
-                print(f"\t# of permuterms in 'url': {len(self.index['url'])}")
+                for field in self.fields:
+                    if field[1]:
+                        print(f'\t# of permuterms in "{field[0]}": {len(self.ptindex[field[0]])}')
+            else:
+                print('\t# of permuterms in "all":', len(self.ptindex["all"]))
 
         if(self.stemming):
             print("----------------------------------------")
             print("STEMS:")
-            print('\t# of stems in "all":', len(self.index["all"]))
             if(self.multifield):
-                print(f"\t# of stems in 'title': {len(self.index['title'])}")
-                print(f"\t# of stems in 'summary': {len(self.index['summary'])}")
-                print(f"\t# of stems in 'section-name': {len(self.index['section-name'])}")
-                print(f"\t# of stems in 'url': {len(self.index['url'])}")
+                for field in self.fields:
+                    if field[1]:
+                        print(f'\t# of stems in "{field[0]}": {len(self.sindex[field[0]])}')
+            else:
+                print('\t# of stems in "all":', len(self.sindex["all"]))
 
         print("----------------------------------------")
         if(self.positional):
@@ -460,6 +475,15 @@ class SAR_Indexer:
     ###   PARTE 2.1: RECUPERACION   ###
     ###                             ###
     ###################################
+    def hashkey(self,query:str,cont:int):
+        key = 0
+        for c in query:
+            key+=ord(c)
+
+        while(key in self.parpos):
+            key+=cont
+
+        return f"{key}"
 
     def solve_parpos(self,ini,cont,query):
         if(query[cont]=='('):
@@ -473,11 +497,11 @@ class SAR_Indexer:
                 while(query[cont]!=')'):
                     cont+=1
                 
-                aux=f"par{cont}"
-                self.parpos[aux]=self.solve_query(query[ini+1:cont])
+                key = self.hashkey(query[ini+1:cont],cont)
+                self.parpos[key]=self.solve_query(query[ini+1:cont])
 
 
-                return query[:ini]+aux+query[cont+1:]
+                return query[:ini]+key+query[cont+1:]
             else:
                 return query
         else:
@@ -520,18 +544,27 @@ class SAR_Indexer:
                 pos=1
             elif(query[cont]=='"' and pos==1):
                 pos=0
-                aux=f"pos{cont}"
-                self.parpos[aux]=self.get_posting(query[ini:cont+1])
-                query=query[:ini]+aux+query[cont+1:]
+                key = self.hashkey(query[ini+1:cont],cont)
+                self.parpos[key]=self.get_posting(query[ini:cont+1])
+                query=query[:ini]+key+query[cont+1:]
             cont+=1
+        
 
         if("(" in query):
             cont=0
             query=self.solve_parpos(None,cont,query)
 
         que=query.split(' ')
-        i = 0
+        
+        i=0
 
+        while(i<len(que)-1):
+            if(que[i] not in ['AND','OR','NOT'] and que[i+1] not in ['AND','OR']):
+                que.insert(i+1,'AND')
+            i+=1
+
+        i = 0
+        
         if(que[i]=='NOT'):
             if(':' in que[i+1]):
                 field,name=que[i+1].split(':')
@@ -702,13 +735,10 @@ class SAR_Indexer:
         
         stem = self.stemmer.stem(term)
         field = "all" if field is None else field
-        if(stem in self.sindex["all"]):
-            return self.sindex["all"][stem]
+        if(stem in self.sindex[field]):
+            return self.sindex[field][stem]
         else:
             return []
-        ####################################################
-        ## COMPLETAR PARA FUNCIONALIDAD EXTRA DE STEMMING ##
-        ####################################################
 
     def get_permuterm(self, term:str, field:Optional[str]=None):
         """
@@ -722,10 +752,24 @@ class SAR_Indexer:
         return: posting list
 
         """
-
-        ##################################################
-        ## COMPLETAR PARA FUNCIONALIDAD EXTRA PERMUTERM ##
-        ##################################################
+        field = "all" if field is None else field
+        perm = "".join(term,'$')
+        while((perm[-1] != "*") and (perm[-1] != "?")):
+            perm = "".join([perm[-1:],perm[:-1]])
+        if perm[:-1] not in self.ptindex[field]:
+            return []
+        else:
+            if '*' in perm:
+                aux = []
+                for i in self.ptindex[field][perm[-1]]:
+                    aux = aux + list(self.index[field][i])
+                return list(set(aux))
+            else:
+                aux = []
+                for i in self.ptindex[field][perm[-1]]:
+                    if len(i) == len(perm)-1:
+                        aux = aux + list(self.index[field][i])
+                return list(set(aux))
         pass
 
 
