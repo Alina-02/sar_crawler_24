@@ -533,10 +533,11 @@ class SAR_Indexer:
         ## COMPLETAR PARA TODAS LAS VERSIONES ##
         ########################################
 
-        # si es positional: recorrer la query, todo aquello que haya entre comillas se trata como positional y hay que mandarlo junto
-        cont = 0
-        pos=0
-        ini=0
+              
+        if("(" in query):
+            query=self.solve_parpos(None,0,query)
+        
+        cont = 0; pos=0; ini=0
 
         while('"' in query):
             if(query[cont]=='"' and pos==0):
@@ -548,23 +549,10 @@ class SAR_Indexer:
                 self.parpos[key]=self.get_posting(query[ini:cont+1])
                 query=query[:ini]+key+query[cont+1:]
             cont+=1
-        
-
-        if("(" in query):
-            cont=0
-            query=self.solve_parpos(None,cont,query)
 
         que=query.split(' ')
-        
-        i=0
-
-        while(i<len(que)-1):
-            if(que[i] not in ['AND','OR','NOT'] and que[i+1] not in ['AND','OR']):
-                que.insert(i+1,'AND')
-            i+=1
-
         i = 0
-        
+
         if(que[i]=='NOT'):
             if(':' in que[i+1]):
                 field,name=que[i+1].split(':')
@@ -575,7 +563,7 @@ class SAR_Indexer:
                 else:
                     postinglist = self.get_posting(que[i+1])
             postinglist = self.reverse_posting(postinglist)
-            i=i+2
+            i+=2
         else:
             if(':' in que[i]):
                 field,name=que[i].split(':')
@@ -585,43 +573,72 @@ class SAR_Indexer:
                     postinglist=self.parpos[que[i]]
                 else:
                     postinglist = self.get_posting(que[i])
-            i=i+1
+            i+=1
         while(i<len(que)):
-            aux=i
-            if(que[i+1]=='NOT'):
-                if(':' in que[i+2]):
-                    field,name=que[i+2].split(':')
-                    pos2 = self.get_posting(name,field)
-                else:
-                    if(que[i+2] in self.parpos):
-                        pos2=self.parpos[que[i+2]]
+            if(que[i] not in ['AND','OR']):
+                if(que[i]=='NOT'):
+                    if(':' in que[i+1]):
+                        field,name=que[i+1].split(':')
+                        pos2 = self.get_posting(name,field)
                     else:
-                        pos2 = self.get_posting(que[i+2])
-                pos2 = self.reverse_posting(pos2)
-                i=i+3
-            else:
-                if(':' in que[i+1]):
-                    field,name=que[i+1].split(':')
-                    pos2 = self.get_posting(name,field)
+                        if(que[i+1] in self.parpos):
+                            pos2=self.parpos[que[i+1]]
+                        else:
+                            pos2 = self.get_posting(que[i+1])
+                    pos2 = self.reverse_posting(pos2)
+                    i+=2
                 else:
-                    if(que[i+1] in self.parpos):
-                        pos2=self.parpos[que[i+1]]
+                    if(':' in que[i]):
+                        field,name=que[i].split(':')
+                        pos2 = self.get_posting(name,field)
                     else:
-                        pos2 = self.get_posting(que[i+1])
-                i=i+2
+                        if(que[i] in self.parpos):
+                            pos2=self.parpos[que[i]]
+                        else:
+                            pos2 = self.get_posting(que[i])
+                    i+=1
+                if(isinstance(postinglist,dict)):
+                        postinglist=list(postinglist.keys())
+                if(isinstance(pos2,dict)):
+                        pos2=list(pos2.keys())
 
-            if(que[aux]=='AND'):
-                if(isinstance(postinglist,dict)):
-                    postinglist=list(postinglist.keys())
-                if(isinstance(pos2,dict)):
-                    pos2=list(pos2.keys())
                 postinglist=self.and_posting(postinglist,pos2)
-            else:
-                if(isinstance(postinglist,dict)):
-                    postinglist=list(postinglist.keys())
-                if(isinstance(pos2,dict)):
-                    pos2=list(pos2.keys())
-                postinglist=self.or_posting(postinglist,pos2)
+            else:    
+                aux=i
+                if(que[i+1]=='NOT'):
+                    if(':' in que[i+2]):
+                        field,name=que[i+2].split(':')
+                        pos2 = self.get_posting(name,field)
+                    else:
+                        if(que[i+2] in self.parpos):
+                            pos2=self.parpos[que[i+2]]
+                        else:
+                            pos2 = self.get_posting(que[i+2])
+                    pos2 = self.reverse_posting(pos2)
+                    i+=3
+                else:
+                    if(':' in que[i+1]):
+                        field,name=que[i+1].split(':')
+                        pos2 = self.get_posting(name,field)
+                    else:
+                        if(que[i+1] in self.parpos):
+                            pos2=self.parpos[que[i+1]]
+                        else:
+                            pos2 = self.get_posting(que[i+1])
+                    i+=2
+
+                if(que[aux]=='AND'):
+                    if(isinstance(postinglist,dict)):
+                        postinglist=list(postinglist.keys())
+                    if(isinstance(pos2,dict)):
+                        pos2=list(pos2.keys())
+                    postinglist=self.and_posting(postinglist,pos2)
+                else:
+                    if(isinstance(postinglist,dict)):
+                        postinglist=list(postinglist.keys())
+                    if(isinstance(pos2,dict)):
+                        pos2=list(pos2.keys())
+                    postinglist=self.or_posting(postinglist,pos2)
 
         return postinglist
 
