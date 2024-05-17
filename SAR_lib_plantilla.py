@@ -358,11 +358,7 @@ class SAR_Indexer:
 
 
         """
-        if(self.multifield == True):
-            fields_to_tokenize = ['all', 'title', 'summary', 'section-name']
-        else:
-            fields_to_tokenize = ['all']
-        for field in fields_to_tokenize:
+        for field in self.index:
             self.sindex[field] = {}
             for token in self.index[field]:
                 stemtoken = self.stemmer.stem(token)
@@ -383,12 +379,7 @@ class SAR_Indexer:
         NECESARIO PARA LA AMPLIACION DE PERMUTERM
 
         """
-        if(self.multifield == True):
-            fields_to_tokenize = ['all', 'title', 'summary', 'section-name']
-        else:
-            fields_to_tokenize = ['all']
-
-        for field in fields_to_tokenize:
+        for field in self.index:
             self.ptindex[field] = {}
             for i in self.index[field]:
                 cadena = "".join([i,"$"])
@@ -784,7 +775,7 @@ class SAR_Indexer:
 
         """
         field = "all" if field is None else field
-        perm = "".join(term,'$')
+        perm = "".join([term,'$'])
         while((perm[-1] != "*") and (perm[-1] != "?")):
             perm = "".join([perm[-1:],perm[:-1]])
         if perm[:-1] not in self.ptindex[field]:
@@ -792,12 +783,12 @@ class SAR_Indexer:
         else:
             if '*' in perm:
                 aux = []
-                for i in self.ptindex[field][perm[-1]]:
+                for i in self.ptindex[field][perm[:-1]]:
                     aux = aux + list(self.index[field][i])
                 return list(set(aux))
             else:
                 aux = []
-                for i in self.ptindex[field][perm[-1]]:
+                for i in self.ptindex[field][perm[:-1]]:
                     if len(i) == len(perm)-1:
                         aux = aux + list(self.index[field][i])
                 return list(set(aux))
