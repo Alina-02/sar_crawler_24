@@ -516,7 +516,7 @@ class SAR_Indexer:
         return: posting list con el resultado de la query
 
         """
-        print(self.index['title']['información'])
+
         if query is None or len(query) == 0:
             return []
 
