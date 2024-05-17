@@ -243,7 +243,7 @@ class SAR_Indexer:
 
         if(self.multifield == True):
             for field in self.fields:
-                if field[1]:
+                if field[1] and field[0] != 'url':
                     fields_to_tokenize.append(field[0])
         else:
             fields_to_tokenize.append(self.def_field)
