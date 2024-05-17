@@ -547,22 +547,33 @@ class SAR_Indexer:
         ########################################
         ## COMPLETAR PARA TODAS LAS VERSIONES ##
         ########################################
-
-              
+        query=query.strip()
+   
         if("(" in query):
             query=self.solve_parpos(None,0,query)
         
-        cont = 0; pos=0; ini=0
+        cont = 0; pos=0; ini=0; field=None
 
         while('"' in query):
+            if(query[cont]==' ' and pos==0):
+                field = cont+1
             if(query[cont]=='"' and pos==0):
                 ini=cont
                 pos=1
+                if(field is not None and query[cont-1]!=':'):
+                    field=None
             elif(query[cont]=='"' and pos==1):
                 pos=0
                 key = self.hashkey(query[ini+1:cont],cont)
-                self.parpos[key]=self.get_posting(query[ini:cont+1])
-                query=query[:ini]+key+query[cont+1:]
+                if(field is not None):
+                    self.parpos[key]=self.get_posting(query[ini:cont+1],query[field:ini])
+                else:
+                    self.parpos[key]=self.get_posting(query[ini:cont+1])
+                if(field is not None):
+                    query=query[:field]+key+query[cont+1:]
+                else:
+                    query=query[:ini]+key+query[cont+1:]
+                field=None
             cont+=1
 
         que=query.split(' ')
