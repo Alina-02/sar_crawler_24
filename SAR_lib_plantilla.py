@@ -516,7 +516,7 @@ class SAR_Indexer:
         return: posting list con el resultado de la query
 
         """
-
+        print(self.index['title']['información'])
         if query is None or len(query) == 0:
             return []
 
@@ -530,7 +530,7 @@ class SAR_Indexer:
         
         cont = 0; pos=0; ini=0; field=None
 
-        while('"' in query and len(query)>cont):
+        while('"' in query):
             if(cont == 0 and query[cont]!='"'):
                 field = cont
             if(query[cont]==' ' and pos==0):
@@ -543,16 +543,15 @@ class SAR_Indexer:
             elif(query[cont]=='"' and pos==1):
                 pos=0
                 key = self.hashkey(query[ini+1:cont],cont)
+                aux=len(query)
                 if(field is not None):
                     self.parpos[key]=self.get_posting(query[ini:cont+1],query[field:ini-1])
-                else:
-                    self.parpos[key]=self.get_posting(query[ini:cont+1])
-                if(field is not None):
                     query=query[:field]+key+query[cont+1:]
                     field=None
                 else:
-                    query=query[:ini]+key+query[cont+1:]
-                    
+                    self.parpos[key]=self.get_posting(query[ini:cont+1])
+                    query=query[:ini]+key+query[cont+1:]                    
+                cont-=(aux-(len(query)))
             cont+=1
 
         que=query.split(' ')
