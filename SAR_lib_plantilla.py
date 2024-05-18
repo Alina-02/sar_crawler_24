@@ -182,7 +182,9 @@ class SAR_Indexer:
                 for filename in sorted(files):
                     if filename.endswith('.json'):
                         fullname = os.path.join(d, filename)
+                        # anade el documento al self.docs para su uso posterior
                         self.docs[len(self.docs) + 1] = fullname
+                        # indexa un documento
                         self.index_file(fullname)
         else:
             print(f"ERROR:{root} is not a file nor directory!", file=sys.stderr)
@@ -192,11 +194,11 @@ class SAR_Indexer:
         ## COMPLETAR PARA FUNCIONALIDADES EXTRA ##
         ##########################################
 
+        # si se quiere usar stemming, se llama a la función para crear el stemming
         if(self.stemming):
             self.make_stemming()
 
-    
-
+        # si se quiere usar permuterm, se llama a la función para crear permuterm
         if(self.permuterm):
             self.make_permuterm()
         
@@ -654,10 +656,29 @@ class SAR_Indexer:
         ########################################
         pass
 
+        """
+            primero comprueba si es una solicitud no válida, es decir, 
+            si hay un permuterm (indicado con * o ? dentro de la query)
+            dentro de un posicional (envuelto en "")
+        """
         if term[0] == '"' and ('*' in term or '?' in term):
             print("No se puede utilizar permuterm dentro del positional.")
             return []
+        
 
+
+        """
+            comprueba qué tipo de término es y lo manda a la función correspondiente:
+            - si contiene * o ? significa que es permuterm
+            - si comienza con " significa que es posicional
+            - si está indicado el stemming
+            a todos éstos métodos se les envía también los fields indicados, si es una
+            query normal:
+            - si se le envía field se busca en el índice del field el término
+            - si no se envía field se busca el término en el índica 'all'
+            si falla el método implica que el término no se ha encontrado en el 
+            diccionario y, por tanto, su posting list corresponde a una lista vacía
+        """
         try:
             # si tiene comodines usar permuterm
             if '*' in term or '?' in term:
@@ -1025,7 +1046,7 @@ class SAR_Indexer:
                             art = j['all'].split()
                             for q in self.query_words(query):
                                 where = j['all'].find(q)
-                                res = '... '
+                                res = '...'
                                 try:
                                     for z in range(where - 50, where + 50):
                                         res += j['all'][z]
