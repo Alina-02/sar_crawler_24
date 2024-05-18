@@ -150,7 +150,7 @@ class SAR_Wiki_Crawler:
         #buscamos los matches de los titulos de las secciones para calcular las posiciones
         matches = self.sections_re.finditer(text)
 
-        #recorremos por pares de matches consecutivos, ya que una seccion abarca desde su titulo hasta el del la siguiente -1
+        #recorremos por pares de matches consecutivos, ya que una seccion abarca desde su titulo hasta el de la siguiente -1
         #en el caso del ultimo match va desde su titulo hasta el final del documento
 
         #primer y segundo elemento de los pares consecutivos del iterable
@@ -179,7 +179,7 @@ class SAR_Wiki_Crawler:
             subsections = []
 
             #si tiene subsecciones las parseamos
-            if len(section_match.group('rest')):
+            if len(section_match.group('rest'))>0:
                 subsections = self.parse_section_subsections(section_match.group('rest'))
 
             #añadimos la entrada al array de seccions
@@ -211,7 +211,7 @@ class SAR_Wiki_Crawler:
         #calculamos el numero de subsecciones (numero de elementos que tendra el iterable)
         num = len(self.subsections_re.findall(text))
 
-        #recorremos por pares de matches consecutivos, ya que una subseccion abarca desde su titulo hasta el del la siguiente -1
+        #recorremos por pares de matches consecutivos, ya que una subseccion abarca desde su titulo hasta el de la siguiente -1
         #en el caso del ultimo match va desde su titulo hasta el final del texto
 
         #primer y segundo elemento de los pares consecutivos del iterable
@@ -380,7 +380,7 @@ class SAR_Wiki_Crawler:
 
             #sacamos sus caracteristicas
             node_depth = file_node[0]
-            node_father = ''#file_node[1]
+            node_father = file_node[1]
             node_url = file_node[2]
             
             '''
@@ -397,23 +397,22 @@ class SAR_Wiki_Crawler:
                 raw_content = self.get_wikipedia_entry_content(node_url)
 
                 doc = self.parse_wikipedia_textual_content(raw_content[0],node_url)
-                '''
+                
                 print('--------------------------------------------------------------------------------------------')
                 print('URL: '+node_url)
                 print('depth: ' + str(node_depth))
                 print('Father: '+node_father)
                 print('--------------------------------------------------------------------------------------------')
-                '''
+                
                 if doc is not None:
                     documents.append(doc)
+                    #tras capturar el documento correctamente actualizamos numero de documentos captuados
+                    total_documents_captured+=1
 
-                if (batch_size is not None) and (len(documents) == batch_size):
-                    files_count += 1
-                    self.save_documents(documents, base_filename, files_count, total_files) 
-                    documents = []
-
-                #tras capturar el documento correctamente actualizamos numero de documentos captuados
-                total_documents_captured+=1
+                    if (batch_size is not None) and (len(documents) == batch_size):
+                        files_count += 1
+                        self.save_documents(documents, base_filename, files_count, total_files) 
+                        documents = []
 
                 #si el nodo actual no esta en el maximo nivel de profundidad
                 if node_depth<max_depth_level:
@@ -423,14 +422,14 @@ class SAR_Wiki_Crawler:
                         #si es una url valida a un articulo de la wikipedia
                         if self.is_valid_url(url):
                             #si la url del articulo es relativa la hacemos absoluta
-                            if not url.startswith("http"):
-                                url = urljoin(node_url,url)
-                                #url = "https://es.wikipedia.org"+url
+                            url = urljoin(node_url,url)
                             
                             #si no esta en la lista de visitados lo añadimos al heap
                             if url not in visited:
                                 #añadimos nuevo nodo al heap
-                                hq.heappush(queue,(node_depth+1,node_url,url))           
+                                # version debugging que guarda el padre del nodo: 
+                                hq.heappush(queue,(node_depth+1,node_url,url)) 
+                                #hq.heappush(queue,(node_depth+1,'',url))             
 
         #al acabar el crawling si no se ha especificado un batch size se guardan todos en el mismo documento
         if batch_size is None:
