@@ -195,6 +195,8 @@ class SAR_Indexer:
         if(self.stemming):
             self.make_stemming()
 
+    
+
         if(self.permuterm):
             self.make_permuterm()
         
@@ -1013,22 +1015,40 @@ class SAR_Indexer:
         
         if len(query) > 0 and query[0] != '#':
 
+
             res = self.solve_query(query)
 
             if(self.show_all):
                 get = len(res)
 
-            if(self.show_snippet and self.count_words_query(query) < 5):
+
+            if(self.show_snippet and len(self.query_words(query)) < 5):
                 for i, docId in enumerate(res):
                     if(i >= get): break
                     url = self.articles[docId][0]
                     title = self.articles[docId][1]
+
+                    for i, line in enumerate(open(f'{self.docs[1]}')):
+                        j = self.parse_article(line)
+                        if(j['url']) == url:
+                            print(f'# {i + 1} ( {docId})\t\u2192 {url}')
+                            print(f'{title}')
+                            art = j['all'].split()
+                            for q in self.query_words(query):
+                                where = j['all'].find(q)
+                                res = '... '
+                                try:
+                                    for z in range(where - 50, where + 50):
+                                        res += j['all'][z]
+                                except:
+                                    break
+                                finally:
+                                    res += '...'
+                                    print(res)
                     
 
-
-
-                    print(f'# {i + 1} ( {docId})\t\u2192 {url}')
-                    print(f'{title}')
+                    # 
+                    # 
 
                     # con -N enseña un snippet de los documentos
                     # línea 1 número de orden para numerar los artículos recuperados
@@ -1052,12 +1072,11 @@ class SAR_Indexer:
 
 
 
-    def count_words_query(self, phrase):
+    def query_words(self, phrase):
         exclude_words = {"AND", "OR", "NOT"}
         words = phrase.split()
         filtered_words = [word for word in words if word not in exclude_words]
-        word_count = len(filtered_words)
-        return word_count
+        return filtered_words
 
         
 
