@@ -277,11 +277,11 @@ class SAR_Indexer:
                         for t in tk:
                             # self.index[field][t]=self.index[field].get(t,[]).append(artId)
                            if(t not in self.index[field]):
-                                   self.index[field][t] = []
-                                   self.index[field][t].append(artId)
+                                self.index[field][t] = []
+                                self.index[field][t].append(artId)
                            else:
                                if(artId not in self.index[field][t]):
-                                   self.index[field][t].append(artId)   
+                                self.index[field][t].append(artId)   
                     
                     if('url' not in self.index):
                         self.index['url'] = {}
