@@ -277,11 +277,11 @@ class SAR_Indexer:
                         for t in tk:
                             # self.index[field][t]=self.index[field].get(t,[]).append(artId)
                            if(t not in self.index[field]):
-                                   self.index[field][t] = []
-                                   self.index[field][t].append(artId)
+                                self.index[field][t] = []
+                                self.index[field][t].append(artId)
                            else:
                                if(artId not in self.index[field][t]):
-                                   self.index[field][t].append(artId)   
+                                self.index[field][t].append(artId)   
                     
                     if('url' not in self.index):
                         self.index['url'] = {}
@@ -370,7 +370,7 @@ class SAR_Indexer:
                 if stemtoken not in self.sindex[field]:
                     self.sindex[field][stemtoken] = list(self.index[field][token])
                 else:
-                    self.sindex[field][stemtoken].extend(self.index[field][token])
+                    (self.sindex[field][stemtoken]).extend(self.index[field][token])
             for stemtoken in self.sindex[field]:
                 self.sindex[field][stemtoken] = list(sorted(set(self.sindex[field][stemtoken])))
         pass
@@ -542,7 +542,8 @@ class SAR_Indexer:
         ########################################
         query=query.strip()
         # query = self.tokenize(query)
-   
+
+        
         if("(" in query):
             query=self.solve_parpos(None,0,query)
         
@@ -650,6 +651,10 @@ class SAR_Indexer:
         ## COMPLETAR PARA TODAS LAS VERSIONES ##
         ########################################
         pass
+
+        if term[0] == '"' and ('*' in term or '?' in term):
+            print("No se puede utilizar permuterm dentro del positional.")
+            return []
 
         try:
             # si tiene comodines usar permuterm
@@ -761,13 +766,13 @@ class SAR_Indexer:
                 aux = []
                 for i in self.ptindex[field][perm[:-1]]:
                     aux.extend(list(self.index[field][i]))
-                return list(set(aux))
+                return list(sorted(set(aux)))
             else:
                 aux = []
                 for i in self.ptindex[field][perm[:-1]]:
                     if len(i) == len(perm)-1:
                         aux.extend(list(self.index[field][i]))
-                return list(set(aux))
+                return list(sorted(set(aux)))
         pass
 
 
@@ -1002,11 +1007,14 @@ class SAR_Indexer:
             if(self.show_all):
                 get = len(res)
 
-            if(self.show_snippet):
+            if(self.show_snippet and self.count_words_query(query) < 5):
                 for i, docId in enumerate(res):
                     if(i >= get): break
                     url = self.articles[docId][0]
                     title = self.articles[docId][1]
+                    
+
+
 
                     print(f'# {i + 1} ( {docId})\t\u2192 {url}')
                     print(f'{title}')
@@ -1033,7 +1041,12 @@ class SAR_Indexer:
 
 
 
-
+    def count_words_query(self, phrase):
+        exclude_words = {"AND", "OR", "NOT"}
+        words = phrase.split()
+        filtered_words = [word for word in words if word not in exclude_words]
+        word_count = len(filtered_words)
+        return word_count
 
         
 
