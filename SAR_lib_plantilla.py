@@ -560,6 +560,7 @@ class SAR_Indexer:
                     self.parpos[key]=self.get_posting(query[ini:cont+1])
                     query=query[:ini]+key+query[cont+1:]                    
                 cont-=(aux-(len(query)))
+
             cont+=1
 
         que=query.split(' ')
@@ -719,35 +720,27 @@ class SAR_Indexer:
         ########################################################
         t = terms[1:len(terms)-1].split()
         postinglist={}
-
+        
         if(not field):
-            for url in self.index[self.def_field][t[0]]:
-                for posicion in self.index[self.def_field][t[0]][url]:
-                    for termino in range(1,len(t)):
-                        if(url in self.index[self.def_field][t[termino]]):
-                            if((posicion+termino) in self.index[self.def_field][t[termino]][url]):
-                                if(termino == len(t)-1):
-                                    if(url not in postinglist):
-                                        postinglist[url]=[]
-                                    postinglist[url].append(posicion)
-                            else:
-                                break
+            field=self.def_field
+        
+        if(len(t)==1):
+            postinglist=self.index[field][t[0]]
+            return postinglist
+
+        for url in self.index[field][t[0]]:
+            for posicion in self.index[field][t[0]][url]:
+                for termino in range(1,len(t)):
+                    if(url in self.index[field][t[termino]]):
+                        if((posicion+termino) in self.index[field][t[termino]][url]):
+                            if(termino == len(t)-1):
+                                if(url not in postinglist):
+                                    postinglist[url]=[]
+                                postinglist[url].append(posicion)
                         else:
                             break
-        else:
-            for url in self.index[field][t[0]]:
-                for posicion in self.index[field][t[0]][url]:
-                    for termino in range(1,len(t)):
-                        if(url in self.index[field][t[termino]]):
-                            if((posicion+termino) in self.index[field][t[termino]][url]):
-                                if(termino == len(t)-1):
-                                    if(url not in postinglist):
-                                        postinglist[url]=[]
-                                    postinglist[url].append(posicion)
-                            else:
-                                break
-                        else:
-                            break
+                    else:
+                        break
         
         return postinglist
 
