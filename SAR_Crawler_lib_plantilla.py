@@ -397,13 +397,13 @@ class SAR_Wiki_Crawler:
                 raw_content = self.get_wikipedia_entry_content(node_url)
 
                 doc = self.parse_wikipedia_textual_content(raw_content[0],node_url)
-                
+                '''
                 print('--------------------------------------------------------------------------------------------')
                 print('URL: '+node_url)
                 print('depth: ' + str(node_depth))
                 print('Father: '+node_father)
                 print('--------------------------------------------------------------------------------------------')
-                
+                '''
                 if doc is not None:
                     documents.append(doc)
                     #tras capturar el documento correctamente actualizamos numero de documentos captuados
@@ -428,8 +428,8 @@ class SAR_Wiki_Crawler:
                             if url not in visited:
                                 #añadimos nuevo nodo al heap
                                 # version debugging que guarda el padre del nodo: 
-                                hq.heappush(queue,(node_depth+1,node_url,url)) 
-                                #hq.heappush(queue,(node_depth+1,'',url))             
+                                #hq.heappush(queue,(node_depth+1,node_url,url)) 
+                                hq.heappush(queue,(node_depth+1,'',url))             
 
         #al acabar el crawling si no se ha especificado un batch size se guardan todos en el mismo documento
         if batch_size is None:
