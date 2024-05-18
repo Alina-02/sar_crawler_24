@@ -796,7 +796,7 @@ class SAR_Indexer:
                 for i in self.ptindex[field][perm[:-1]]:
                     if len(i) == len(perm)-1:
                         aux.extend(list(self.index[field][i]))
-                return list(set(aux))
+                return list(sorted(set(aux)))
         pass
 
 
