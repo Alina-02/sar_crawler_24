@@ -285,11 +285,11 @@ class SAR_Indexer:
                     
                     if('url' not in self.index):
                         self.index['url'] = {}
-                    else:
+                    
                         # self.index['url'][j['url']]=self.index['url'].get(j['url'],[]).append(artId)
-                        if(j['url'] not in self.index['url']):
-                           self.index['url'][j['url']] = []
-                           self.index['url'][j['url']].append(artId)
+                    if(j['url'] not in self.index['url']):
+                        self.index['url'][j['url']] = []
+                        self.index['url'][j['url']].append(artId)
                     
                 #positional
 
@@ -300,11 +300,16 @@ class SAR_Indexer:
                         if field not in self.index:
                             self.index[field] = {}
                         for i, t in enumerate(tk):
-                            if t not in self.index[field]:
+                            if(t not in self.index[field]):
                                 self.index[field][t] = {}
-                            if artId not in self.index[field][t]:
                                 self.index[field][t][artId] = []
-                            self.index[field][t][artId].append(i)
+                                self.index[field][t][artId].append(i)
+                            else:
+                                if artId not in self.index[field][t]:
+                                    self.index[field][t][artId] = []
+                                    self.index[field][t][artId].append(i)
+                                else:
+                                    self.index[field][t][artId].append(i)
 
                     t = j['url']
                     if 'url' not in self.index:
@@ -993,20 +998,46 @@ class SAR_Indexer:
         ################
         ## COMPLETAR  ##
         ################
+
+        get = 10
         
         if len(query) > 0 and query[0] != '#':
-            res = self.solve_query(query)
-            
-            i = 1
-            for docId in res:
-                url = self.articles[docId][0]
-                title = self.articles[docId][1]
 
-                print(f'# {i} ( {docId}) {title}:\t{url}')
-                i += 1
+            res = self.solve_query(query)
+
+            if(self.show_all):
+                get = len(res)
+
+            if(self.show_snippet):
+                for i, docId in enumerate(res):
+                    if(i >= get): break
+                    url = self.articles[docId][0]
+                    title = self.articles[docId][1]
+
+                    print(f'# {i + 1} ( {docId})\t\u2192 {url}')
+                    print(f'{title}')
+
+                    # con -N enseña un snippet de los documentos
+                    # línea 1 número de orden para numerar los artículos recuperados
+                    # id y url
+                    # línea 2 título del artículo
+                    # línea 3 trozo del artículo donde aparezcan als palabras de la 
+                    # consulta encontradas
+
+
+
+            else: 
+                for i, docId in enumerate(res):
+                    if(i >= get): break
+                    url = self.articles[docId][0]
+                    title = self.articles[docId][1]
+
+                    print(f'# {i + 1} ( {docId}) {title}:\t{url}')
 
             print('=====================================')
             print('Number of results:', len(res))
+
+
 
 
 
