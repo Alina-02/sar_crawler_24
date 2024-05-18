@@ -252,34 +252,59 @@ class SAR_Indexer:
         else:
             fields_to_tokenize.append(self.def_field)
 
+
+        """
+            para cada artículo del file
+        """
         for i, line in enumerate(open(filename)):
+            """
+                consigue el artículo separando sus fields
+            """
             j = self.parse_article(line)
 
-        #already_in_index
 
         #################
         ### COMPLETAR ###
         #################
+            """
+                inicia la id de los artículos a cero
+            """
             artId = 0;
             
-            # si el artículo todavía no se ha analizado
+            """
+                si el artículo todavía no se ha analizado, se añade a los artículos ya vistos
+                sumando uno a la longitud de los artículos analizados (artId)
+                se guarda en su posición de self.articles su url y título para identificación
+                y posterior uso
+                también se añade su url a self.urls para podes comprobar que ya se ha analizado
+            """
             if(j['url'] not in self.urls):
                 artId = len(self.articles) + 1
                 self.articles[artId] = [j['url'], j['title']]
-
                 self.urls.add(j['url'])
 
+                """ 
+                    si no se quiere usar el índice posicional:
+                        1. recorre los fields indicados menos 'url' que no debe tokenizarse
+                        2. tokeniza y field y deja el resultado en tk
+                        3. si el field no está en el índice, añade el diccionario
+                        4. por cada token en tk:
+                            4.1 si no está el término en el índice del field, añade la lista y el artId
+                            4.2 si está en el índice, añade el artId a la lista del término
+                        5. si hace falta se crea el índice para el field url
+                        6. si no comprueba si está el url en el índica, si no está crea su lista
+                        7. añade el artId a la lista de la url
+                """
 
-
-                #si no se quiere usar el índice posicional 
+                # si no se quiere usar el índice posicional 
                 if(self.positional == False):
+                    # para cada field
                     for field in fields_to_tokenize:
                         tk = self.tokenize(j[field])
-                    #para cada token del documento
                         if(field not in self.index):
                             self.index[field] = {}
+                         # para cada token
                         for t in tk:
-                            # self.index[field][t]=self.index[field].get(t,[]).append(artId)
                            if(t not in self.index[field]):
                                 self.index[field][t] = []
                                 self.index[field][t].append(artId)
@@ -287,22 +312,40 @@ class SAR_Indexer:
                                if(artId not in self.index[field][t]):
                                 self.index[field][t].append(artId)   
                     
+                    # field url
                     if('url' not in self.index):
                         self.index['url'] = {}
-                    
-                        # self.index['url'][j['url']]=self.index['url'].get(j['url'],[]).append(artId)
                     if(j['url'] not in self.index['url']):
                         self.index['url'][j['url']] = []
-                        self.index['url'][j['url']].append(artId)
+                    self.index['url'][j['url']].append(artId)
                     
-                #positional
+                """ 
+                    si se quiere usar el índice posicional:
+                        1. recorre los fields indicados menos 'url' que no debe tokenizarse
+                        2. tokeniza y field y deja el resultado en tk
+                        3. si el field no está en el índice, añade el diccionario
+                        4. por cada token en tk:
+                            4.1 si no está el término en el índice del field, añade su diccionario,
+                                añade la lista del artId y la posición correspondiente dentro del artículo.
+                            4.2 si está en el índice:
+                                4.2.1 si no está el artículo en el término, se añade su lista y la posición
+                                4.2.2 si está el artículo en el término, se añade la posición a su lista.
+                        5. si hace falta se crea el índice para el field url
+                        6. comprueba:
+                            6.1 si el término no está en 'url' crea el diccionario
+                            6.2 si el término está en 'url':
+                                6.2.1 si no está el artículo en el término, crea su lista 
+                        7. añade la posición cero a la lista del artículo
+                """
 
                 if self.positional:
 
+                    # recorre los fields
                     for field in fields_to_tokenize:
                         tk = self.tokenize(j[field])
                         if field not in self.index:
                             self.index[field] = {}
+                        # recorre los tokens consiguiendo sus posiciones
                         for i, t in enumerate(tk):
                             if(t not in self.index[field]):
                                 self.index[field][t] = {}
@@ -315,6 +358,7 @@ class SAR_Indexer:
                                 else:
                                     self.index[field][t][artId].append(i)
 
+                    # field url
                     t = j['url']
                     if 'url' not in self.index:
                         self.index['url'] = {}
@@ -843,12 +887,8 @@ class SAR_Indexer:
     def and_posting(self, p1:list, p2:list):
         """
         NECESARIO PARA TODAS LAS VERSIONES
-
         Calcula el AND de dos posting list de forma EFICIENTE
-
         param:  "p1", "p2": posting lists sobre las que calcular
-
-
         return: posting list con los artid incluidos en p1 y p2
 
         """
@@ -861,6 +901,16 @@ class SAR_Indexer:
         res = []
         i = 0
         j = 0
+
+        """
+            recorre las dos posting list:
+                - si el artId es igual, significa que se debe añadir a la respuesta
+                y avanzar en ambas posting list
+                - si el artId de alguna de las listas es menor que el de la otra,
+                avanza en esa lista
+            al terminar una de las listas se sabe que lo que queda en la otra no 
+            debe ir en la respuesta dado que es un AND
+        """
         while i < len(p1) and j < len(p2):
             if p1[i] == p2[j]:
                 res.append(p1[i])
@@ -877,12 +927,8 @@ class SAR_Indexer:
     def or_posting(self, p1:list, p2:list):
         """
         NECESARIO PARA TODAS LAS VERSIONES
-
         Calcula el OR de dos posting list de forma EFICIENTE
-
         param:  "p1", "p2": posting lists sobre las que calcular
-
-
         return: posting list con los artid incluidos de p1 o p2
 
         """
@@ -897,6 +943,17 @@ class SAR_Indexer:
         res = []
         i = 0
         j = 0
+
+        """
+            recorre las dos posting list:
+                - si el artId es igual, se añade a la respuesta y avanza en ambas 
+                posting lists
+                - si el artId de alguna de las listas es menor que el de la otra,
+                se añade a la respuesta y avanza en su posting list.
+            al terminar una de las listas hay que terminar de añadir lo que hay en
+            la otra
+        """
+
         while i < len(p1) and j < len(p2):
             if p1[i] == p2[j]:
                 res.append(p1[i])
@@ -946,6 +1003,18 @@ class SAR_Indexer:
         res = []
         i = 0
         j = 0
+
+        """
+            recorre las dos posting list:
+                - si el artId es igual, avanza en ambas posting lists
+                - si el artId de la primera posting list es menor que el de la 
+                  segunda, significa que en el artículo está el primer término
+                  y no el segundo, por lo que se añade a la respuesta
+                - 
+            al terminar una de las listas hay que terminar de añadir lo que hay en
+            la otra
+        """
+
         while i < len(p1) and j < len(p2):
             if p1[i] == p2[j]:
                 i += 1; j += 1
