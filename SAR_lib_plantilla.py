@@ -1013,11 +1013,12 @@ class SAR_Indexer:
             if(self.show_all):
                 get = len(res)
 
-            if(self.show_snippet):
+            if(self.show_snippet and self.count_words_query(query) < 5):
                 for i, docId in enumerate(res):
                     if(i >= get): break
                     url = self.articles[docId][0]
                     title = self.articles[docId][1]
+                    article
 
                     print(f'# {i + 1} ( {docId})\t\u2192 {url}')
                     print(f'{title}')
@@ -1044,7 +1045,12 @@ class SAR_Indexer:
 
 
 
-
+    def count_words_query(self, phrase):
+        exclude_words = {"AND", "OR", "NOT"}
+        words = phrase.split()
+        filtered_words = [word for word in words if word not in exclude_words]
+        word_count = len(filtered_words)
+        return word_count
 
         
 
