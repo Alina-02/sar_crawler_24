@@ -380,7 +380,7 @@ class SAR_Wiki_Crawler:
 
             #sacamos sus caracteristicas
             node_depth = file_node[0]
-            node_father = file_node[1]
+            node_father = ''#file_node[1]
             node_url = file_node[2]
             
             '''
@@ -397,13 +397,13 @@ class SAR_Wiki_Crawler:
                 raw_content = self.get_wikipedia_entry_content(node_url)
 
                 doc = self.parse_wikipedia_textual_content(raw_content[0],node_url)
-
+                '''
                 print('--------------------------------------------------------------------------------------------')
                 print('URL: '+node_url)
                 print('depth: ' + str(node_depth))
                 print('Father: '+node_father)
                 print('--------------------------------------------------------------------------------------------')
-
+                '''
                 if doc is not None:
                     documents.append(doc)
 
@@ -424,7 +424,8 @@ class SAR_Wiki_Crawler:
                         if self.is_valid_url(url):
                             #si la url del articulo es relativa la hacemos absoluta
                             if not url.startswith("http"):
-                                url = "https://es.wikipedia.org"+url
+                                url = urljoin(node_url,url)
+                                #url = "https://es.wikipedia.org"+url
                             
                             #si no esta en la lista de visitados lo añadimos al heap
                             if url not in visited:
