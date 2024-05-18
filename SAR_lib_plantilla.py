@@ -532,6 +532,10 @@ class SAR_Indexer:
         ########################################
         query=query.strip()
         # query = self.tokenize(query)
+
+        if ('*' in query or '?' in query) and '"' in query:
+            print("No se puede utilizar permuterm y positionals al mismo tiempo.")
+            return []
    
         if("(" in query):
             query=self.solve_parpos(None,0,query)
