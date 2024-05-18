@@ -417,24 +417,24 @@ class SAR_Indexer:
         Muestra estadisticas de los indices
         
         """
-        ########################################
-        ## COMPLETAR PARA TODAS LAS VERSIONES ##
-        ########################################
+        #Impresión por pantalla del resultado de la indexación, mostrando primeramente el número de archivos y de artículos.
         print("========================================")
         print(f"Number of indexed files: {len(self.docs)}")
         print("----------------------------------------")
         print(f"Number of indexed articles: {len(self.articles)}")
         print("----------------------------------------")
 
+        #Imprime para los campos seleccionados(en caso de multifield) las estadísticas del índice invertido de términos.
         print("TOKENS:")
         if(self.multifield):
             for field in self.fields:
                 if field[1]:
                     print(f'\t# of tokens in "{field[0]}": {len(self.index[field[0]])}')
         else:
-            print('\t# of tokens in "all":', len(self.index["all"]))
+            print(f'\t# of tokens in "{self.def_field}":, {len(self.index[self.def_field])}')
 
 
+        #Imprime para los campos seleccionados(en caso de multifield) las estadísticas del índice invertido de permuterms.
         if(self.permuterm):
             print("----------------------------------------")
             print("PERMUTERMS:")
@@ -443,8 +443,9 @@ class SAR_Indexer:
                     if field[1]:
                         print(f'\t# of permuterms in "{field[0]}": {len(self.ptindex[field[0]])}')
             else:
-                print('\t# of permuterms in "all":', len(self.ptindex["all"]))
+                print(f'\t# of permuterms in "{self.def_field}":, {len(self.ptindex[self.def_field])}')
 
+        #Imprime para los campos seleccionados(en caso de multifield) las estadísticas del índice invertido de stems.
         if(self.stemming):
             print("----------------------------------------")
             print("STEMS:")
@@ -453,8 +454,9 @@ class SAR_Indexer:
                     if field[1]:
                         print(f'\t# of stems in "{field[0]}": {len(self.sindex[field[0]])}')
             else:
-                print('\t# of stems in "all":', len(self.sindex["all"]))
+                print(f'\t# of stems in "{self.def_field}":, {len(self.sindex[self.def_field])}')
 
+        #Imprime si las positionals están o no activadas.
         print("----------------------------------------")
         if(self.positional):
             print("Positional queries are allowed.")
@@ -519,6 +521,8 @@ class SAR_Indexer:
             else:
                 postinglist = self.get_posting(term)
         
+        if(isinstance(postinglist,dict)):
+            return list(postinglist.keys())
         return postinglist
 
 
@@ -616,17 +620,9 @@ class SAR_Indexer:
                     i+=2
 
                 if(que[aux]=='AND'):
-                    if(isinstance(postinglist,dict)):
-                        postinglist=list(postinglist.keys())
-                    if(isinstance(pos2,dict)):
-                        pos2=list(pos2.keys())
                     postinglist=self.and_posting(postinglist,pos2)
 
                 else:
-                    if(isinstance(postinglist,dict)):
-                        postinglist=list(postinglist.keys())
-                    if(isinstance(pos2,dict)):
-                        pos2=list(pos2.keys())
                     postinglist=self.or_posting(postinglist,pos2)
 
         return postinglist
@@ -714,32 +710,35 @@ class SAR_Indexer:
         return: posting list
 
         """
-        ########################################################
-        ## COMPLETAR PARA FUNCIONALIDAD EXTRA DE POSICIONALES ##
-        ########################################################
+        #Retiramos las comillas de la consulta y la dividimos.
         t = terms[1:len(terms)-1].split()
-        postinglist={}
-        
+        postinglist=[]
+        #Si no hay un campo especificado, se usa el por defecto.
         if(not field):
             field=self.def_field
-        
+        #Si solo hay un termino en la consulta se devuelve su diccionario.
         if(len(t)==1):
-            postinglist=self.index[field][t[0]]
-            return postinglist
+            return list(self.index[field][t[0]].keys())
 
+        #Por cada aparición del primer termino en cada articulo se comprueba si cada uno de los términos aparece en el artículo y ocupa 
+        #su posición correspondiente. En caso de que se llegue al último termino de la consulta y cumpla las condiciones se añade la posición 
+        #del primer término de la consulta a la lista del artículo correspondiente en el diccionario que se devolverá cuando acaben las comprobaciones.
         for url in self.index[field][t[0]]:
+            noturl=True
             for posicion in self.index[field][t[0]][url]:
-                for termino in range(1,len(t)):
-                    if(url in self.index[field][t[termino]]):
-                        if((posicion+termino) in self.index[field][t[termino]][url]):
-                            if(termino == len(t)-1):
-                                if(url not in postinglist):
-                                    postinglist[url]=[]
-                                postinglist[url].append(posicion)
+                if(noturl):
+                    for termino in range(1,len(t)):
+                        if(noturl and url in self.index[field][t[termino]]):
+                            if((posicion+termino) in self.index[field][t[termino]][url]):
+                                if(termino==len(t)-1):
+                                    postinglist.append(url)
+                                    noturl=False
+                            else:
+                                break
                         else:
                             break
-                    else:
-                        break
+                else:
+                    break
         
         return postinglist
 
@@ -822,8 +821,6 @@ class SAR_Indexer:
         pcont=0
         articles=list(self.articles.keys())
         i=0
-        if(isinstance(p,dict)):
-            p=list(p.keys())
 
         while(pcont<len(p)):
             if(p[pcont]>articles[i]):
