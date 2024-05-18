@@ -533,10 +533,7 @@ class SAR_Indexer:
         query=query.strip()
         # query = self.tokenize(query)
 
-        if ('*' in query or '?' in query) and '"' in query:
-            print("No se puede utilizar permuterm y positionals al mismo tiempo.")
-            return []
-   
+        
         if("(" in query):
             query=self.solve_parpos(None,0,query)
         
@@ -683,6 +680,10 @@ class SAR_Indexer:
         ## COMPLETAR PARA TODAS LAS VERSIONES ##
         ########################################
         pass
+
+        if term[0] == '"' and ('*' in term or '?' in term):
+            print("No se puede utilizar permuterm dentro del positional.")
+            return []
 
         try:
             # si tiene comodines usar permuterm
@@ -1022,7 +1023,9 @@ class SAR_Indexer:
                     if(i >= get): break
                     url = self.articles[docId][0]
                     title = self.articles[docId][1]
-                    article
+                    
+
+
 
                     print(f'# {i + 1} ( {docId})\t\u2192 {url}')
                     print(f'{title}')
