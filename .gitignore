@@ -1,3 +1,7 @@
 .venv/
 __pycache__/*
 index
+100_simple.bin
+200_simple.bin
+500_simple.bin
+1000_simple.bin

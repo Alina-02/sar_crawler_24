@@ -531,6 +531,7 @@ class SAR_Indexer:
         ## COMPLETAR PARA TODAS LAS VERSIONES ##
         ########################################
         query=query.strip()
+        # query = self.tokenize(query)
    
         if("(" in query):
             query=self.solve_parpos(None,0,query)
@@ -678,18 +679,23 @@ class SAR_Indexer:
         ########################################
         pass
 
-        # si tiene comodines usar permuterm
-        if '*' in term or '?' in term:
-            return self.get_permuterm(term, field)
-        # si tiene dobles comillas usar posicionales
-        elif(term[0] == '"'):
-            return self.get_positionals(term, field)
-        elif(self.use_stemming):
-            return self.get_stemming(term, field)
-        elif(field != None):
-            return self.index[field][term]
-        else:
-            return self.index['all'][term]
+        try:
+            # si tiene comodines usar permuterm
+            if '*' in term or '?' in term:
+                return self.get_permuterm(term, field)
+            # si tiene dobles comillas usar posicionales
+            elif(term[0] == '"'):
+                return self.get_positionals(term, field)
+            elif(self.use_stemming):
+                return self.get_stemming(term, field)
+            elif(field != None):
+                return self.index[field][term]
+            else:
+                return self.index['all'][term]
+        except:
+            return []
+            
+
         
         
     
@@ -983,8 +989,8 @@ class SAR_Indexer:
                 else:
                     print(f'>>>>{query}\t{reference} != {result}<<<<')
                     errors = True                    
-            else:
-                print(query)
+            # else:
+            #     print(query)
         return not errors
 
 
