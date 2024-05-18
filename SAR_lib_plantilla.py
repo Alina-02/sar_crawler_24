@@ -1039,21 +1039,21 @@ class SAR_Indexer:
                         j = self.parse_article(line)
                         if(j['url']) == url:
                             print(f'# {i + 1} ( {docId})\t\u2192 {url}')
-                            print(f'{title}')
+                            print(f'# Titulo del articulo: {title}')
                             art = j['all'].split()
                             for q in self.query_words(query):
-                                where = j['all'].find(q)
-                                res = '...'
-                                try:
-                                    for z in range(where - 50, where + 50):
-                                        res += j['all'][z]
-                                except:
-                                    break
-                                finally:
-                                    res += '...'
-                                    print(res)
-                    
+                                
+                                #expresion regular que encuentra una frase con la palabra dada
+                                frase_regex = re.compile(rf'(^|\.\s|\n)([^\.\n]*\b{q}\b[^\.\n]*)(?=\.\s|\n|$)', re.IGNORECASE) 
 
+                                frases = frase_regex.finditer(j['all'])
+                                
+                                res = '[...] '
+                                
+                                for f in frases:
+                                    res += f.group(0).replace('\n', '') + ' [...] '
+                    
+                                print(res)
                     # 
                     # 
 
