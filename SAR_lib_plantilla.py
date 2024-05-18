@@ -1010,9 +1010,11 @@ class SAR_Indexer:
                 - si el artId de la primera posting list es menor que el de la 
                   segunda, significa que en el artículo está el primer término
                   y no el segundo, por lo que se añade a la respuesta
-                - 
-            al terminar una de las listas hay que terminar de añadir lo que hay en
-            la otra
+                - si el artId de la segunda posting list es menor que el de la
+                  primera, avanzar una posición
+            si termina antes la segunda posting list se termina de recorrer la
+            primera sabiendo que todos los artículos tendrán sólo el primer
+            término y añadiéndose a la respuesta
         """
 
         while i < len(p1) and j < len(p2):
@@ -1087,61 +1089,69 @@ class SAR_Indexer:
         ## COMPLETAR  ##
         ################
 
+        """
+            de serie se  muestran sólo los primeros diez artículos recuperados
+            para mostrarlos todos se debe especificar
+        """
+
         get = 10
         
         if len(query) > 0 and query[0] != '#':
 
-
+            # resuelve la query
             res = self.solve_query(query)
 
             if(self.show_all):
                 get = len(res)
 
-
+            # se muestran snippets 
             if(self.show_snippet and len(self.query_words(query)) < 5):
+                # recorre los documentos mencionados en la respuesta
                 for i, docId in enumerate(res):
                     if(i >= get): break
+
+                    # obtiene los url y los títulos
                     url = self.articles[docId][0]
                     title = self.articles[docId][1]
 
-                    for i, line in enumerate(open(f'{self.docs[1]}')):
-                        j = self.parse_article(line)
-                        if(j['url']) == url:
-                            print(f'# {i + 1} ( {docId})\t\u2192 {url}')
-                            print(f'# Titulo del articulo: {title}')
-                            art = j['all'].split()
-                            for q in self.query_words(query):
-                                
-                                #expresion regular que encuentra una frase con la palabra dada
-                                frase_regex = re.compile(rf'(^|\.\s|\n)([^\.\n]*\b{q}\b[^\.\n]*)(?=\.\s|\n|$)', re.IGNORECASE) 
+                    # abre los documentos usados para hacer el índice 
+                    for z in range(1, len(self.docs)):
+                        for line in open(f'{self.docs[z]}'):
+                            # parsea los artículos usados
+                            j = self.parse_article(line)
+                            # si el url del artículo es el que se está buscando
+                            if(j['url']) == url:
 
-                                frases = frase_regex.finditer(j['all'])
-                                
-                                res = '[...] '
-                                
-                                for f in frases:
-                                    res += f.group(0).replace('\n', '') + ' [...] '
-                    
-                                print(res)
-                    # 
-                    # 
+                                # muestra su posición de recuperación, el id del artículo y su url
+                                print(f'# {i + 1} ( {docId})\t\u2192 {url}')
+                                # muestra el título
+                                print(f'# Titulo del articulo: {title}')
+                                # para cada palabra de la query
+                                for q in self.query_words(query):
+                                    
+                                    # expresion regular que encuentra una frase con la palabra dada
+                                    frase_regex = re.compile(rf'(^|\.\s|\n)([^\.\n]*\b{q}\b[^\.\n]*)(?=\.\s|\n|$)', re.IGNORECASE) 
+                                    # saca las frases en las que aparece la palabra
+                                    frases = frase_regex.finditer(j['all'])
+                                    res_snippets = ''
+                                    
 
-                    # con -N enseña un snippet de los documentos
-                    # línea 1 número de orden para numerar los artículos recuperados
-                    # id y url
-                    # línea 2 título del artículo
-                    # línea 3 trozo del artículo donde aparezcan als palabras de la 
-                    # consulta encontradas
+                                    # añade reparados entre frases
+                                    for f in frases:
+                                        res_snippets += f.group(0).replace('\n', '') + ' [...] '
+                        
+                                    print(res_snippets)
 
-
-
+            # no se muestran snippets
             else: 
-                for i, docId in enumerate(res):
+                # para cada documento recuperado
+                for i, artId in enumerate(res):
                     if(i >= get): break
-                    url = self.articles[docId][0]
-                    title = self.articles[docId][1]
-
-                    print(f'# {i + 1} ( {docId}) {title}:\t{url}')
+                    # recupera el url y el título
+                    url = self.articles[artId][0]
+                    title = self.articles[artId][1]
+                    # muestra la posición en la recuperación, el id del artíuclo y el título
+                    print(f'# {i + 1} ( {artId}) {title}:\t{url}')
 
             print('=====================================')
             print('Number of results:', len(res))
