@@ -507,7 +507,17 @@ class SAR_Indexer:
         else:
             return query
 
-
+    def calculateposting(self,term:str):
+        if(':' in term):
+                field,name=term.split(':')
+                postinglist = self.get_posting(name,field)
+        else:
+            if(term in self.parpos):
+                postinglist=self.parpos[term]
+            else:
+                postinglist = self.get_posting(term)
+        
+        return postinglist
 
 
     def solve_query(self, query:str, prev:Dict={}):
@@ -541,7 +551,7 @@ class SAR_Indexer:
         
         cont = 0; pos=0; ini=0; field=None
 
-        while('"' in query):
+        while(cont<len(query) and '"' in query[cont:]):
             if(cont == 0 and query[cont]!='"'):
                 field = cont
             if(query[cont]==' ' and pos==0):
@@ -570,48 +580,21 @@ class SAR_Indexer:
         i = 0
 
         if(que[i]=='NOT'):
-            if(':' in que[i+1]):
-                field,name=que[i+1].split(':')
-                postinglist = self.get_posting(name,field)
-            else:
-                if(que[i+1] in self.parpos):
-                    postinglist=self.parpos[que[i+1]]
-                else:
-                    postinglist = self.get_posting(que[i+1])
+            postinglist=self.calculateposting(que[i+1])
             postinglist = self.reverse_posting(postinglist)
             i+=2
         else:
-            if(':' in que[i]):
-                field,name=que[i].split(':')
-                postinglist = self.get_posting(name,field)
-            else:
-                if(que[i] in self.parpos):
-                    postinglist=self.parpos[que[i]]
-                else:
-                    postinglist = self.get_posting(que[i])
+            postinglist=self.calculateposting(que[i])
             i+=1
+
         while(i<len(que)):
             if(que[i] not in ['AND','OR']):
                 if(que[i]=='NOT'):
-                    if(':' in que[i+1]):
-                        field,name=que[i+1].split(':')
-                        pos2 = self.get_posting(name,field)
-                    else:
-                        if(que[i+1] in self.parpos):
-                            pos2=self.parpos[que[i+1]]
-                        else:
-                            pos2 = self.get_posting(que[i+1])
+                    pos2=self.calculateposting(que[i+1])
                     pos2 = self.reverse_posting(pos2)
                     i+=2
                 else:
-                    if(':' in que[i]):
-                        field,name=que[i].split(':')
-                        pos2 = self.get_posting(name,field)
-                    else:
-                        if(que[i] in self.parpos):
-                            pos2=self.parpos[que[i]]
-                        else:
-                            pos2 = self.get_posting(que[i])
+                    pos2=self.calculateposting(que[i])
                     i+=1
                 if(isinstance(postinglist,dict)):
                         postinglist=list(postinglist.keys())
@@ -619,28 +602,15 @@ class SAR_Indexer:
                         pos2=list(pos2.keys())
 
                 postinglist=self.and_posting(postinglist,pos2)
+
             else:    
                 aux=i
                 if(que[i+1]=='NOT'):
-                    if(':' in que[i+2]):
-                        field,name=que[i+2].split(':')
-                        pos2 = self.get_posting(name,field)
-                    else:
-                        if(que[i+2] in self.parpos):
-                            pos2=self.parpos[que[i+2]]
-                        else:
-                            pos2 = self.get_posting(que[i+2])
+                    pos2=self.calculateposting(que[i+2])
                     pos2 = self.reverse_posting(pos2)
                     i+=3
                 else:
-                    if(':' in que[i+1]):
-                        field,name=que[i+1].split(':')
-                        pos2 = self.get_posting(name,field)
-                    else:
-                        if(que[i+1] in self.parpos):
-                            pos2=self.parpos[que[i+1]]
-                        else:
-                            pos2 = self.get_posting(que[i+1])
+                    pos2=self.calculateposting(que[i+1])
                     i+=2
 
                 if(que[aux]=='AND'):
@@ -649,6 +619,7 @@ class SAR_Indexer:
                     if(isinstance(pos2,dict)):
                         pos2=list(pos2.keys())
                     postinglist=self.and_posting(postinglist,pos2)
+
                 else:
                     if(isinstance(postinglist,dict)):
                         postinglist=list(postinglist.keys())
@@ -827,9 +798,27 @@ class SAR_Indexer:
         ## COMPLETAR PARA TODAS LAS VERSIONES ##
         ########################################
         notlist=list()
-        for article in self.articles.keys():
-            if article not in p:
-                notlist.append(article)
+        pcont=0
+        articles=list(self.articles.keys())
+        i=0
+        if(isinstance(p,dict)):
+            p=list(p.keys())
+
+        while(pcont<len(p)):
+            if(p[pcont]>articles[i]):
+                notlist.append(articles[i])
+                i+=1
+            elif(articles[i]>p[pcont]):
+                notlist.append(articles[i])
+                pcont+=1
+            else:
+                i+=1
+                pcont+=1
+        while(i<len(articles)):
+            notlist.append(articles[i])
+            i+=1
+
+
         return notlist
 
 
