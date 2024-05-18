@@ -127,6 +127,125 @@ class SAR_Wiki_Crawler:
 
         return None
 
+    '''
+        args: 
+            text: es el articulo de wikipedia sin el texto ni el resumen, es decir solo la parte correspondiente a las secciones
+    
+        returns:
+            array con las secciones
+    
+    '''
+    def parse_text_sections(self, text: str) -> Optional[Dict[str, Union[str,List]]]:
+
+        sections = []
+        
+        #calculamos el numero de secciones (numero de elementos que tendra el iterable)
+        num = len(self.sections_re.findall(text))
+
+        #en algunos casos hay documentos que contienen el titulo de una sola seccion sin texto ni contenido
+        #en esos casos hacemos return [] para que no de error al hacer el match
+        if num == 0:
+            return []
+    
+        #buscamos los matches de los titulos de las secciones para calcular las posiciones
+        matches = self.sections_re.finditer(text)
+
+        #recorremos por pares de matches consecutivos, ya que una seccion abarca desde su titulo hasta el del la siguiente -1
+        #en el caso del ultimo match va desde su titulo hasta el final del documento
+
+        #primer y segundo elemento de los pares consecutivos del iterable
+        first = next(matches)
+        second = None
+
+        #recorremos todos los pares del iterable
+        while num>0:
+            #la primera iteracion first no cambia
+            if second is not None:
+                first = second
+            
+            #si no es la ultima sacamos la siguiente
+            if num>1:
+                second = next(matches)
+
+            #hacemos el match de la expresion regular de la seccion
+
+            #si no es la ultima la aplicamos desde su titulo hasta el titulo de la siguiente -1
+            if num>1:
+                section_match = self.section_re.search(text[first.span()[0]:second.span()[0]])
+            else:
+                #si es la ultima seccion va desde el titulo hasta el final
+                section_match = self.section_re.search(text[first.span()[0]:])
+
+            subsections = []
+
+            #si tiene subsecciones las parseamos
+            if len(section_match.group('rest')):
+                subsections = self.parse_section_subsections(section_match.group('rest'))
+
+            #añadimos la entrada al array de seccions
+            sections.append({
+                'name': section_match.group('name'),
+                'text': section_match.group('text'),
+                'subsections': subsections
+            })
+
+            num -= 1
+
+        return sections
+    
+    '''
+        args: 
+            text: texto con solo la parte de las subsecciones de una seccion
+
+        returns:
+            array con las subsecciones
+    
+    '''
+    def parse_section_subsections(self, text):
+
+        subsections = []
+    
+        #buscamos los matches de los titulos de las subsecciones para calcular las posiciones
+        matches = self.subsections_re.finditer(text)
+
+        #calculamos el numero de subsecciones (numero de elementos que tendra el iterable)
+        num = len(self.subsections_re.findall(text))
+
+        #recorremos por pares de matches consecutivos, ya que una subseccion abarca desde su titulo hasta el del la siguiente -1
+        #en el caso del ultimo match va desde su titulo hasta el final del texto
+
+        #primer y segundo elemento de los pares consecutivos del iterable
+        first = next(matches)
+        second = None
+
+        #recorremos todos los pares del iterable
+        while num>0:
+            #la primera iteracion first no cambia
+            if second is not None:
+                first = second
+            
+            #si no es la ultima sacamos la siguiente
+            if num>1:
+                second = next(matches)
+
+            #hacemos el match de la expresion regular de la subseccion
+
+            #si no es la ultima la aplicamos desde su titulo hasta el titulo de la siguiente -1
+            if num>1:
+                subsection_match = self.subsection_re.search(text[first.span()[0]:second.span()[0]])
+            else:
+                #si es la ultima seccion va desde el titulo hasta el final
+                subsection_match = self.subsection_re.search(text[first.span()[0]:])
+
+            #añadimos la entrada al array de subsecciones
+            subsections.append({
+                'name': subsection_match.group('name'),
+                'text': subsection_match.group('text')
+            })
+
+            num -= 1
+
+        return subsections
 
     def parse_wikipedia_textual_content(self, text: str, url: str) -> Optional[Dict[str, Union[str,List]]]:
         """Devuelve una estructura tipo artículo a partir del text en crudo
@@ -153,20 +272,26 @@ class SAR_Wiki_Crawler:
         def clean_text(txt):
             return '\n'.join(l for l in txt.split('\n') if len(l) > 0)
         
+        text = clean_text(text)
+        
         document = {}
 
+        match = self.title_sum_re.search(text)
+
         document['url'] = url
-        document['title'] = self.title_sum_re.search(text).group('title')
-        document['summary'] = clean_text(self.title_sum_re.search(text).group('summary'))
-        document['sections'] = {}
-        
-        for s in self.sections_re.findall(text):
-            document['sections'][self.sections_re.sub('',s)] = {}
+        document['title'] = match.group('title')
+        document['summary'] = match.group('summary')
 
-        print(document)
-        
+        if document['title'] is None or document['summary'] is None:
+            return None
 
-        # COMPLETAR
+        text = match.group('rest')
+
+        #si tiene secciones
+        if len(text)>0:
+            document['sections'] = self.parse_text_sections(text)
+        else:
+            document['sections'] = []
 
         return document
         
@@ -271,7 +396,21 @@ class SAR_Wiki_Crawler:
                 #el raw content es una tupla con dos elementos, el texto del articulo y la lista con urls citados
                 raw_content = self.get_wikipedia_entry_content(node_url)
 
-                parsed_content = self.parse_wikipedia_textual_content(raw_content[0],node_url)
+                doc = self.parse_wikipedia_textual_content(raw_content[0],node_url)
+
+                print('--------------------------------------------------------------------------------------------')
+                print('URL: '+node_url)
+                print('depth: ' + str(node_depth))
+                print('Father: '+node_father)
+                print('--------------------------------------------------------------------------------------------')
+
+                if doc is not None:
+                    documents.append(doc)
+
+                if (batch_size is not None) and (len(documents) == batch_size):
+                    files_count += 1
+                    self.save_documents(documents, base_filename, files_count, total_files) 
+                    documents = []
 
                 #tras capturar el documento correctamente actualizamos numero de documentos captuados
                 total_documents_captured+=1
@@ -291,6 +430,15 @@ class SAR_Wiki_Crawler:
                             if url not in visited:
                                 #añadimos nuevo nodo al heap
                                 hq.heappush(queue,(node_depth+1,node_url,url))           
+
+        #al acabar el crawling si no se ha especificado un batch size se guardan todos en el mismo documento
+        if batch_size is None:
+            files_count += 1
+            self.save_documents(documents, base_filename)
+        #si se ha especificado batch size pero el documents no ha llegado se guardan los que queden
+        elif len(documents)>0:
+            files_count += 1
+            self.save_documents(documents, base_filename, files_count, total_files) 
 
 
     def wikipedia_crawling_from_url(self,

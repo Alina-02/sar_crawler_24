@@ -363,18 +363,16 @@ class SAR_Indexer:
 
 
         """
-        if(self.multifield == True):
-            fields_to_tokenize = ['all', 'title', 'summary', 'section-name']
-        else:
-            fields_to_tokenize = ['all']
-        for field in fields_to_tokenize:
+        for field in self.index:
             self.sindex[field] = {}
             for token in self.index[field]:
                 stemtoken = self.stemmer.stem(token)
                 if stemtoken not in self.sindex[field]:
                     self.sindex[field][stemtoken] = list(self.index[field][token])
                 else:
-                    self.sindex[field][stemtoken] = list(set(self.sindex[field][stemtoken]).union(set(self.index[field][token])))
+                    self.sindex[field][stemtoken].extend(self.index[field][token])
+            for stemtoken in self.sindex[field]:
+                self.sindex[field][stemtoken] = list(sorted(set(self.sindex[field][stemtoken])))
         pass
 
 
@@ -388,12 +386,7 @@ class SAR_Indexer:
         NECESARIO PARA LA AMPLIACION DE PERMUTERM
 
         """
-        if(self.multifield == True):
-            fields_to_tokenize = ['all', 'title', 'summary', 'section-name']
-        else:
-            fields_to_tokenize = ['all']
-
-        for field in fields_to_tokenize:
+        for field in self.index:
             self.ptindex[field] = {}
             for i in self.index[field]:
                 cadena = "".join([i,"$"])
@@ -537,22 +530,35 @@ class SAR_Indexer:
         ########################################
         ## COMPLETAR PARA TODAS LAS VERSIONES ##
         ########################################
-
-              
+        query=query.strip()
+   
         if("(" in query):
             query=self.solve_parpos(None,0,query)
         
-        cont = 0; pos=0; ini=0
+        cont = 0; pos=0; ini=0; field=None
 
         while('"' in query):
+            if(cont == 0 and query[cont]!='"'):
+                field = cont
+            if(query[cont]==' ' and pos==0):
+                field=cont+1
             if(query[cont]=='"' and pos==0):
                 ini=cont
                 pos=1
+                if(field is not None and query[cont-1]!=':'):
+                    field=None
             elif(query[cont]=='"' and pos==1):
                 pos=0
                 key = self.hashkey(query[ini+1:cont],cont)
-                self.parpos[key]=self.get_posting(query[ini:cont+1])
-                query=query[:ini]+key+query[cont+1:]
+                aux=len(query)
+                if(field is not None):
+                    self.parpos[key]=self.get_posting(query[ini:cont+1],query[field:ini-1])
+                    query=query[:field]+key+query[cont+1:]
+                    field=None
+                else:
+                    self.parpos[key]=self.get_posting(query[ini:cont+1])
+                    query=query[:ini]+key+query[cont+1:]                    
+                cont-=(aux-(len(query)))
             cont+=1
 
         que=query.split(' ')
@@ -775,7 +781,7 @@ class SAR_Indexer:
 
         """
         field = "all" if field is None else field
-        perm = "".join(term,'$')
+        perm = "".join([term,'$'])
         while((perm[-1] != "*") and (perm[-1] != "?")):
             perm = "".join([perm[-1:],perm[:-1]])
         if perm[:-1] not in self.ptindex[field]:
@@ -783,14 +789,14 @@ class SAR_Indexer:
         else:
             if '*' in perm:
                 aux = []
-                for i in self.ptindex[field][perm[-1]]:
-                    aux = aux + list(self.index[field][i])
+                for i in self.ptindex[field][perm[:-1]]:
+                    aux.extend(list(self.index[field][i]))
                 return list(set(aux))
             else:
                 aux = []
-                for i in self.ptindex[field][perm[-1]]:
+                for i in self.ptindex[field][perm[:-1]]:
                     if len(i) == len(perm)-1:
-                        aux = aux + list(self.index[field][i])
+                        aux.extend(list(self.index[field][i]))
                 return list(set(aux))
         pass
 
