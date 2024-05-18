@@ -435,19 +435,14 @@ class SAR_Indexer:
 
         """
         for field in self.index:
-            self.ptindex[field] = {}
+            self.ptindex[field] = []
             for i in self.index[field]:
                 cadena = "".join([i,"$"])
-                aux = [cadena]
+                self.ptindex[field].append((cadena,i))
                 for j in range(len(cadena)-1):
                     cadena = "".join([cadena[-1:],cadena[:-1]])
-                    aux.append(cadena)
-                res = [x[i:j] for x in aux for i in range(len(x)) for j in range(i + 1, len(x) + 1) if j-i >= 2 and '$' in x[i:j]]
-                for j in set(res):
-                    if j not in self.ptindex[field]:
-                        self.ptindex[field][j] = [i]
-                    else:
-                        self.ptindex[field][j].append(i)
+                    self.ptindex[field].append((cadena,i))
+            self.ptindex[field].sort()
         pass
 
 
@@ -825,21 +820,33 @@ class SAR_Indexer:
         perm = "".join([term,'$'])
         while((perm[-1] != "*") and (perm[-1] != "?")):
             perm = "".join([perm[-1:],perm[:-1]])
-        if perm[:-1] not in self.ptindex[field]:
-            return []
-        else:
-            if '*' in perm:
-                aux = []
-                for i in self.ptindex[field][perm[:-1]]:
-                    aux.extend(list(self.index[field][i]))
-                return list(sorted(set(aux)))
+        simbolo = perm[-1]
+        perm = perm[:-1]
+        #Busqueda binaria :(
+        inicio = 0
+        fin = len(self.ptindex[field])-1
+        while(inicio <= fin):
+            medio = int((inicio + fin)/2)
+            if((self.ptindex[field][medio][0] > perm) or (self.ptindex[field][medio][0].startswith(perm))):
+                fin = medio - 1
             else:
-                aux = []
-                for i in self.ptindex[field][perm[:-1]]:
-                    if len(i) == len(perm)-1:
-                        aux.extend(list(self.index[field][i]))
-                return list(sorted(set(aux)))
-        pass
+                inicio = medio + 1
+
+        if simbolo == '*':
+            aux = set(self.index[field][self.ptindex[field][inicio][1]])
+            inicio += 1
+            while self.ptindex[field][inicio][0].startswith(perm) and inicio < len(self.ptindex[field]):
+                aux.update(self.index[field][self.ptindex[field][inicio][1]])
+                inicio += 1
+            return list(sorted(aux))
+        else:       
+            aux = {}
+            longitud = len(perm)
+            while self.ptindex[field][inicio][0].startswith(perm) and inicio < len(self.ptindex[field]):
+                if (longitud+1 == len(self.ptindex[field][inicio][0])):
+                    aux.update(self.index[field][self.ptindex[field][inicio][1]])
+                inicio += 1
+            return list(sorted(aux))
 
 
 
