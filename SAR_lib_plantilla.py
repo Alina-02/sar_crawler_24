@@ -411,16 +411,21 @@ class SAR_Indexer:
 
 
         """
+        #Por cada field en index. Esto asegura que funcione con multifield
         for field in self.index:
             self.sindex[field] = {}
             for token in self.index[field]:
+                #Pasamos cada palabra de index por el stemmer
                 stemtoken = self.stemmer.stem(token)
+                #Si la palabra no es en el diccionario de stems lo agregamos
                 if stemtoken not in self.sindex[field]:
-                    self.sindex[field][stemtoken] = list(self.index[field][token])
+                    #En un principio usaremos sets para que no hayan terminos repetidos
+                    self.sindex[field][stemtoken] = set(self.index[field][token])
                 else:
-                    (self.sindex[field][stemtoken]).extend(self.index[field][token])
+                    (self.sindex[field][stemtoken]).update(self.index[field][token])
+            #Cuando acabemos con todas las palabras de un field ordenamos cada set y la transformamos en una lista
             for stemtoken in self.sindex[field]:
-                self.sindex[field][stemtoken] = list(sorted(set(self.sindex[field][stemtoken])))
+                self.sindex[field][stemtoken] = list(sorted(self.sindex[field][stemtoken]))
         pass
 
 
@@ -434,14 +439,21 @@ class SAR_Indexer:
         NECESARIO PARA LA AMPLIACION DE PERMUTERM
 
         """
+        #Por cada field en index. Esto asegura que funcione con multifield
         for field in self.index:
             self.ptindex[field] = []
+            #Generador de permuterms
             for i in self.index[field]:
+                #Añadimos simbolo final de palabra
                 cadena = "".join([i,"$"])
+                #Añadimos par (permuterm, palabra)
                 self.ptindex[field].append((cadena,i))
                 for j in range(len(cadena)-1):
+                    #Generamos siguiente permuterm
                     cadena = "".join([cadena[-1:],cadena[:-1]])
+                    #Añadimos par (permuterm, palabra)
                     self.ptindex[field].append((cadena,i))
+            #Ordenamos la lista para facilitar las queries
             self.ptindex[field].sort()
         pass
 
@@ -796,17 +808,18 @@ class SAR_Indexer:
         return: posting list
 
         """
-        
+        #Metodo muy sencillo, pasamos la query por el stemmer y el resultado lo intentamos encontrar en el diccionario.
         stem = self.stemmer.stem(term)
         field = "all" if field is None else field
         if(stem in self.sindex[field]):
+            #Si encontramos el stem en el diccionario devolvemos la posting list asociada
             return self.sindex[field][stem]
         else:
+            #Sino devolvemos una lista vacía
             return []
 
     def get_permuterm(self, term:str, field:Optional[str]=None):
         """
-
         Devuelve la posting list asociada a un termino utilizando el indice permuterm.
         NECESARIO PARA LA AMPLIACION DE PERMUTERM
 
@@ -814,15 +827,16 @@ class SAR_Indexer:
                 "field": campo sobre el que se debe recuperar la posting list, solo necesario se se hace la ampliacion de multiples indices
 
         return: posting list
-
         """
+        #Permutamos la string hasta que la wildcard este al final de la palabra
         field = "all" if field is None else field
         perm = "".join([term,'$'])
         while((perm[-1] != "*") and (perm[-1] != "?")):
             perm = "".join([perm[-1:],perm[:-1]])
         simbolo = perm[-1]
         perm = perm[:-1]
-        #Busqueda binaria :(
+
+        #Busqueda binaria
         inicio = 0
         fin = len(self.ptindex[field])-1
         while(inicio <= fin):
@@ -831,22 +845,29 @@ class SAR_Indexer:
                 fin = medio - 1
             else:
                 inicio = medio + 1
-
+        #Comprobamos si el indice inicio pertenece a la lista
+        if(inicio == len(self.ptindex[field])):
+            return []
+        #Variable con el resultado final:
+        aux = {}
+        #Diferenciamos dos casos:
+        #En el caso de que la wildcard sea *
         if simbolo == '*':
-            aux = set(self.index[field][self.ptindex[field][inicio][1]])
-            inicio += 1
+            #Mientras el permuterm empiece por nuestra query (perm) añadimos la posting list
             while self.ptindex[field][inicio][0].startswith(perm) and inicio < len(self.ptindex[field]):
                 aux.update(self.index[field][self.ptindex[field][inicio][1]])
                 inicio += 1
-            return list(sorted(aux))
+        #En el caso de que la wildcard sea ?
         else:       
-            aux = {}
             longitud = len(perm)
+            '''Mientras el permuterm empiece por nuestra query y la longitud del permuterm sea 
+            1 mas que la query añadimos la posting list'''
             while self.ptindex[field][inicio][0].startswith(perm) and inicio < len(self.ptindex[field]):
                 if (longitud+1 == len(self.ptindex[field][inicio][0])):
                     aux.update(self.index[field][self.ptindex[field][inicio][1]])
                 inicio += 1
-            return list(sorted(aux))
+        #Devolvemos el resultado ordenado        
+        return list(sorted(aux))
 
 
 
