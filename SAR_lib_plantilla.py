@@ -475,39 +475,52 @@ class SAR_Indexer:
     ###   PARTE 2.1: RECUPERACION   ###
     ###                             ###
     ###################################
+
     def hashkey(self,query:str,cont:int):
         key = 0
+        #Suma el valor ascii de cada elemento del string query
         for c in query:
             key+=ord(c)
-
+        #En el caso de que existiese la clave le suma el valor contador, hasta que no exista
         while(key in self.parpos):
             key+=cont
-
+        
         return f"{key}"
 
     def solve_parpos(self,ini,cont,query):
+        #Si para la posición del valor del contador hay un '(' ini, toma el valor del contador
         if(query[cont]=='('):
             ini = cont
+        #Si hay parentesis desde el valor del contador se incrementa este, y se llama recursivamente al método
         if('(' in query[cont:]):
             cont+=1
             query=self.solve_parpos(ini,cont,query)
+        #Si siguen habiendo ')' a partir del valor actual del contador, y para el valor anterior hay un '('
+        #se incrementa el contador hasta que se encuentra, se obtiene con hashkey() una clave única y se resuelve
+        #la parte de la query entre paréntesis, añadiendo el resultado a un diccionario auxiliar, por último
+        #se devuelve la query, pero intercambiando la parte resuelta, por la clave creada por hashkey(), en otro caso
+        #se devuelve la query como está.
+        if(')' in query[cont:] and query[cont-1]=='('):
+            while(query[cont]!=')'):
+                cont+=1
+            
+            key = self.hashkey(query[ini+1:cont],cont)
+            self.parpos[key]=self.solve_query(query[ini+1:cont])
 
-        if(ini!=None):
-            if(')' in query[cont:] and query[cont-1]=='('):
-                while(query[cont]!=')'):
-                    cont+=1
-                
-                key = self.hashkey(query[ini+1:cont],cont)
-                self.parpos[key]=self.solve_query(query[ini+1:cont])
-
-
-                return query[:ini]+key+query[cont+1:]
-            else:
-                return query
+            return query[:ini]+key+query[cont+1:]
         else:
             return query
 
+
     def calculateposting(self,term:str):
+        #Si hubiese alguna mayuscula se vuelve a minúscula
+        if(not term.islower()):
+            term=term.lower()
+        
+        #Si está ':' en el término significa que tiene un campo indicado, se separa y obtiene la postinglist
+        #para el campo y el término indicado.
+        #Si el término está en self.parpos significa que ya se ha obtenido anteriormente, y se recupera esa postinglist.
+        #En otro caso se recupera la posting del término.
         if(':' in term):
                 field,name=term.split(':')
                 postinglist = self.get_posting(name,field)
@@ -516,9 +529,9 @@ class SAR_Indexer:
                 postinglist=self.parpos[term]
             else:
                 postinglist = self.get_posting(term)
-        
+                
         if(isinstance(postinglist,dict)):
-            return list(postinglist.keys())
+            return [*postinglist]
         return postinglist
 
 
@@ -540,29 +553,44 @@ class SAR_Indexer:
 
         if query is None or len(query) == 0:
             return []
-
-        ########################################
-        ## COMPLETAR PARA TODAS LAS VERSIONES ##
-        ########################################
-        query=query.strip()
-        # query = self.tokenize(query)
-
         
+        #Se quitan espacios en blanco al principio y al final por si hubiesen.
+        query=query.strip()
+
+        #En caso que hayan paréntesis se resuelven mediante el método solve_parpos
+        #y se recupera la nueva query.
         if("(" in query):
             query=self.solve_parpos(None,0,query)
-        
+
+        #Variables para la resolución de las comillas
         cont = 0; pos=0; ini=0; field=None
 
-        while(cont<len(query) and '"' in query[cont:]):
+        #Comprobación de si hay o no comillas en la query
+        hay='"' in query[cont:]
+
+        #En caso de que hayan "" en la consulta.
+        while(hay and cont<len(query)):
+            #Para los terminos que no empiecen por comillas se toma la posicion de la primera letra,
+            #de forma que se pueda resolver la especificación del campo
             if(cont == 0 and query[cont]!='"'):
                 field = cont
             if(query[cont]==' ' and pos==0):
                 field=cont+1
+            
+            #Si se encuentran unas comillas y el auxiliar que nos indica si habiamos encontrado unas anteriormente
+            #sigue igual a 0, se toma la posición inicial y se cambia a 1 el auxiliar.
+            #Además si el valor de field no era None y la posición anterior al contador no era ':', 
+            #se vuelve a poner field como None
             if(query[cont]=='"' and pos==0):
                 ini=cont
                 pos=1
                 if(field is not None and query[cont-1]!=':'):
                     field=None
+
+            #Si se encuentran comillas y el auxiliar es 1, se vuelve a poner a 0, se obtiene
+            #una clave única, se obtiene la posting list y se añade a self.parpos y se quita 
+            #de la query las comillas resueltas. Además se reduce la cantidad del contador,
+            #en la longitud de la query anterior menos la actual, de forma que vuelva a la misma posición.
             elif(query[cont]=='"' and pos==1):
                 pos=0
                 key = self.hashkey(query[ini+1:cont],cont)
@@ -576,11 +604,15 @@ class SAR_Indexer:
                     query=query[:ini]+key+query[cont+1:]                    
                 cont-=(aux-(len(query)))
 
+                #Una vez retiradas las comillas se vuelve a comprobar si hay o no en la query.
+                hay='"' in query[cont:]
+
             cont+=1
 
         que=query.split(' ')
         i = 0
 
+        #Calculo de postinglist del primer término en función de si usa NOT o no
         if(que[i]=='NOT'):
             postinglist=self.calculateposting(que[i+1])
             postinglist = self.reverse_posting(postinglist)
@@ -590,6 +622,8 @@ class SAR_Indexer:
             i+=1
 
         while(i<len(que)):
+            #Si las terminos no están separados por AND o OR se calcula la posting list del segundo
+            #y se hace la intersección.
             if(que[i] not in ['AND','OR']):
                 if(que[i]=='NOT'):
                     pos2=self.calculateposting(que[i+1])
@@ -598,13 +632,9 @@ class SAR_Indexer:
                 else:
                     pos2=self.calculateposting(que[i])
                     i+=1
-                if(isinstance(postinglist,dict)):
-                        postinglist=list(postinglist.keys())
-                if(isinstance(pos2,dict)):
-                        pos2=list(pos2.keys())
-
                 postinglist=self.and_posting(postinglist,pos2)
-
+            #De otra forma se calcula la posting list del segundo y se hace la intersección
+            #o la unión en función de AND o OR.
             else:    
                 aux=i
                 if(que[i+1]=='NOT'):
@@ -695,7 +725,7 @@ class SAR_Indexer:
             field=self.def_field
         #Si solo hay un termino en la consulta se devuelve su diccionario.
         if(len(t)==1):
-            return list(self.index[field][t[0]].keys())
+            return [*self.index[field][t[0]]]
 
         #Por cada aparición del primer termino en cada articulo se comprueba si cada uno de los términos aparece en el artículo y ocupa 
         #su posición correspondiente. En caso de que se llegue al último termino de la consulta y cumpla las condiciones se añade la posición 
@@ -795,24 +825,24 @@ class SAR_Indexer:
         ## COMPLETAR PARA TODAS LAS VERSIONES ##
         ########################################
         notlist=list()
-        pcont=0
-        articles=list(self.articles.keys())
-        i=0
+        #auxiliares para recorrer las listas
+        pcont=0;i=0
+        #articulos indexados
+        articles=[*self.articles]
 
+        #Si el id en p es mayor se añade el valor del id en articles.
+        #Si son iguales no se añade y se sigue a la siguiente iteración.
+        #Si el id en articles es mayor es porque ya se ha acabado los ids de p, por tanto se añade el resto.
         while(pcont<len(p)):
             if(p[pcont]>articles[i]):
                 notlist.append(articles[i])
                 i+=1
-            elif(articles[i]>p[pcont]):
-                notlist.append(articles[i])
-                pcont+=1
-            else:
+            elif(articles[i]==p[pcont]):
                 i+=1
                 pcont+=1
         while(i<len(articles)):
             notlist.append(articles[i])
             i+=1
-
 
         return notlist
 
