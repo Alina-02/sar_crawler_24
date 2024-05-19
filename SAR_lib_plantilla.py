@@ -416,7 +416,7 @@ class SAR_Indexer:
                 stemtoken = self.stemmer.stem(token)
                 #Si la palabra no es en el diccionario de stems lo agregamos
                 if stemtoken not in self.sindex[field]:
-                    #En un principio usaremos sets para que no hayan terminos repetidos
+                    #En un principio usaremos sets para que no hayan docIDs repetidos
                     self.sindex[field][stemtoken] = set(self.index[field][token])
                 else:
                     (self.sindex[field][stemtoken]).update(self.index[field][token])
