@@ -402,14 +402,11 @@ class SAR_Indexer:
 
     def make_stemming(self):
         """
-
         Crea el indice de stemming (self.sindex) para los terminos de todos los indices.
 
         NECESARIO PARA LA AMPLIACION DE STEMMING.
 
         "self.stemmer.stem(token) devuelve el stem del token"
-
-
         """
         #Por cada field en index. Esto asegura que funcione con multifield
         for field in self.index:
@@ -810,7 +807,7 @@ class SAR_Indexer:
         """
         #Metodo muy sencillo, pasamos la query por el stemmer y el resultado lo intentamos encontrar en el diccionario.
         stem = self.stemmer.stem(term)
-        field = "all" if field is None else field
+        field = self.def_field if field is None else field
         if(stem in self.sindex[field]):
             #Si encontramos el stem en el diccionario devolvemos la posting list asociada
             return self.sindex[field][stem]
@@ -829,7 +826,7 @@ class SAR_Indexer:
         return: posting list
         """
         #Permutamos la string hasta que la wildcard este al final de la palabra
-        field = "all" if field is None else field
+        field = self.def_field if field is None else field
         perm = "".join([term,'$'])
         while((perm[-1] != "*") and (perm[-1] != "?")):
             perm = "".join([perm[-1:],perm[:-1]])
