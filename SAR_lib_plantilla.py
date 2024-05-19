@@ -566,8 +566,7 @@ class SAR_Indexer:
 
     def calculateposting(self,term:str):
         #Si hubiese alguna mayuscula se vuelve a minúscula
-        if(not term.islower()):
-            term=term.lower()
+        term=term.lower()
         
         #Si está ':' en el término significa que tiene un campo indicado, se separa y obtiene la postinglist
         #para el campo y el término indicado.
