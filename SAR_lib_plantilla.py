@@ -402,25 +402,27 @@ class SAR_Indexer:
 
     def make_stemming(self):
         """
-
         Crea el indice de stemming (self.sindex) para los terminos de todos los indices.
 
         NECESARIO PARA LA AMPLIACION DE STEMMING.
 
         "self.stemmer.stem(token) devuelve el stem del token"
-
-
         """
+        #Por cada field en index. Esto asegura que funcione con multifield
         for field in self.index:
             self.sindex[field] = {}
             for token in self.index[field]:
+                #Pasamos cada palabra de index por el stemmer
                 stemtoken = self.stemmer.stem(token)
+                #Si la palabra no es en el diccionario de stems lo agregamos
                 if stemtoken not in self.sindex[field]:
-                    self.sindex[field][stemtoken] = list(self.index[field][token])
+                    #En un principio usaremos sets para que no hayan docIDs repetidos
+                    self.sindex[field][stemtoken] = set(self.index[field][token])
                 else:
-                    (self.sindex[field][stemtoken]).extend(self.index[field][token])
+                    (self.sindex[field][stemtoken]).update(self.index[field][token])
+            #Cuando acabemos con todas las palabras de un field ordenamos cada set y la transformamos en una lista
             for stemtoken in self.sindex[field]:
-                self.sindex[field][stemtoken] = list(sorted(set(self.sindex[field][stemtoken])))
+                self.sindex[field][stemtoken] = list(sorted(self.sindex[field][stemtoken]))
         pass
 
 
@@ -434,14 +436,21 @@ class SAR_Indexer:
         NECESARIO PARA LA AMPLIACION DE PERMUTERM
 
         """
+        #Por cada field en index. Esto asegura que funcione con multifield
         for field in self.index:
             self.ptindex[field] = []
+            #Generador de permuterms
             for i in self.index[field]:
+                #Añadimos simbolo final de palabra
                 cadena = "".join([i,"$"])
+                #Añadimos par (permuterm, palabra)
                 self.ptindex[field].append((cadena,i))
                 for j in range(len(cadena)-1):
+                    #Generamos siguiente permuterm
                     cadena = "".join([cadena[-1:],cadena[:-1]])
+                    #Añadimos par (permuterm, palabra)
                     self.ptindex[field].append((cadena,i))
+            #Ordenamos la lista para facilitar las queries
             self.ptindex[field].sort()
         pass
 
@@ -518,39 +527,51 @@ class SAR_Indexer:
     ###   PARTE 2.1: RECUPERACION   ###
     ###                             ###
     ###################################
+
     def hashkey(self,query:str,cont:int):
         key = 0
+        #Suma el valor ascii de cada elemento del string query
         for c in query:
             key+=ord(c)
-
+        #En el caso de que existiese la clave le suma el valor contador, hasta que no exista
         while(key in self.parpos):
             key+=cont
-
+        
         return f"{key}"
 
     def solve_parpos(self,ini,cont,query):
+        #Si para la posición del valor del contador hay un '(' ini, toma el valor del contador
         if(query[cont]=='('):
             ini = cont
+        #Si hay parentesis desde el valor del contador se incrementa este, y se llama recursivamente al método
         if('(' in query[cont:]):
             cont+=1
             query=self.solve_parpos(ini,cont,query)
+        #Si siguen habiendo ')' a partir del valor actual del contador, y para el valor anterior hay un '('
+        #se incrementa el contador hasta que se encuentra, se obtiene con hashkey() una clave única y se resuelve
+        #la parte de la query entre paréntesis, añadiendo el resultado a un diccionario auxiliar, por último
+        #se devuelve la query, pero intercambiando la parte resuelta, por la clave creada por hashkey(), en otro caso
+        #se devuelve la query como está.
+        if(')' in query[cont:] and query[cont-1]=='('):
+            while(query[cont]!=')'):
+                cont+=1
+            
+            key = self.hashkey(query[ini+1:cont],cont)
+            self.parpos[key]=self.solve_query(query[ini+1:cont])
 
-        if(ini!=None):
-            if(')' in query[cont:] and query[cont-1]=='('):
-                while(query[cont]!=')'):
-                    cont+=1
-                
-                key = self.hashkey(query[ini+1:cont],cont)
-                self.parpos[key]=self.solve_query(query[ini+1:cont])
-
-
-                return query[:ini]+key+query[cont+1:]
-            else:
-                return query
+            return query[:ini]+key+query[cont+1:]
         else:
             return query
 
+
     def calculateposting(self,term:str):
+        #Si hubiese alguna mayuscula se vuelve a minúscula
+        term=term.lower()
+        
+        #Si está ':' en el término significa que tiene un campo indicado, se separa y obtiene la postinglist
+        #para el campo y el término indicado.
+        #Si el término está en self.parpos significa que ya se ha obtenido anteriormente, y se recupera esa postinglist.
+        #En otro caso se recupera la posting del término.
         if(':' in term):
                 field,name=term.split(':')
                 postinglist = self.get_posting(name,field)
@@ -559,9 +580,9 @@ class SAR_Indexer:
                 postinglist=self.parpos[term]
             else:
                 postinglist = self.get_posting(term)
-        
+                
         if(isinstance(postinglist,dict)):
-            return list(postinglist.keys())
+            return [*postinglist]
         return postinglist
 
 
@@ -583,29 +604,44 @@ class SAR_Indexer:
 
         if query is None or len(query) == 0:
             return []
-
-        ########################################
-        ## COMPLETAR PARA TODAS LAS VERSIONES ##
-        ########################################
-        query=query.strip()
-        # query = self.tokenize(query)
-
         
+        #Se quitan espacios en blanco al principio y al final por si hubiesen.
+        query=query.strip()
+
+        #En caso que hayan paréntesis se resuelven mediante el método solve_parpos
+        #y se recupera la nueva query.
         if("(" in query):
             query=self.solve_parpos(None,0,query)
-        
+
+        #Variables para la resolución de las comillas
         cont = 0; pos=0; ini=0; field=None
 
-        while(cont<len(query) and '"' in query[cont:]):
+        #Comprobación de si hay o no comillas en la query
+        hay='"' in query[cont:]
+
+        #En caso de que hayan "" en la consulta.
+        while(hay and cont<len(query)):
+            #Para los terminos que no empiecen por comillas se toma la posicion de la primera letra,
+            #de forma que se pueda resolver la especificación del campo
             if(cont == 0 and query[cont]!='"'):
                 field = cont
             if(query[cont]==' ' and pos==0):
                 field=cont+1
+            
+            #Si se encuentran unas comillas y el auxiliar que nos indica si habiamos encontrado unas anteriormente
+            #sigue igual a 0, se toma la posición inicial y se cambia a 1 el auxiliar.
+            #Además si el valor de field no era None y la posición anterior al contador no era ':', 
+            #se vuelve a poner field como None
             if(query[cont]=='"' and pos==0):
                 ini=cont
                 pos=1
                 if(field is not None and query[cont-1]!=':'):
                     field=None
+
+            #Si se encuentran comillas y el auxiliar es 1, se vuelve a poner a 0, se obtiene
+            #una clave única, se obtiene la posting list y se añade a self.parpos y se quita 
+            #de la query las comillas resueltas. Además se reduce la cantidad del contador,
+            #en la longitud de la query anterior menos la actual, de forma que vuelva a la misma posición.
             elif(query[cont]=='"' and pos==1):
                 pos=0
                 key = self.hashkey(query[ini+1:cont],cont)
@@ -619,11 +655,15 @@ class SAR_Indexer:
                     query=query[:ini]+key+query[cont+1:]                    
                 cont-=(aux-(len(query)))
 
+                #Una vez retiradas las comillas se vuelve a comprobar si hay o no en la query.
+                hay='"' in query[cont:]
+
             cont+=1
 
         que=query.split(' ')
         i = 0
 
+        #Calculo de postinglist del primer término en función de si usa NOT o no
         if(que[i]=='NOT'):
             postinglist=self.calculateposting(que[i+1])
             postinglist = self.reverse_posting(postinglist)
@@ -633,6 +673,8 @@ class SAR_Indexer:
             i+=1
 
         while(i<len(que)):
+            #Si las terminos no están separados por AND o OR se calcula la posting list del segundo
+            #y se hace la intersección.
             if(que[i] not in ['AND','OR']):
                 if(que[i]=='NOT'):
                     pos2=self.calculateposting(que[i+1])
@@ -641,13 +683,9 @@ class SAR_Indexer:
                 else:
                     pos2=self.calculateposting(que[i])
                     i+=1
-                if(isinstance(postinglist,dict)):
-                        postinglist=list(postinglist.keys())
-                if(isinstance(pos2,dict)):
-                        pos2=list(pos2.keys())
-
                 postinglist=self.and_posting(postinglist,pos2)
-
+            #De otra forma se calcula la posting list del segundo y se hace la intersección
+            #o la unión en función de AND o OR.
             else:    
                 aux=i
                 if(que[i+1]=='NOT'):
@@ -757,7 +795,7 @@ class SAR_Indexer:
             field=self.def_field
         #Si solo hay un termino en la consulta se devuelve su diccionario.
         if(len(t)==1):
-            return list(self.index[field][t[0]].keys())
+            return [*self.index[field][t[0]]]
 
         #Por cada aparición del primer termino en cada articulo se comprueba si cada uno de los términos aparece en el artículo y ocupa 
         #su posición correspondiente. En caso de que se llegue al último termino de la consulta y cumpla las condiciones se añade la posición 
@@ -796,17 +834,18 @@ class SAR_Indexer:
         return: posting list
 
         """
-        
+        #Metodo muy sencillo, pasamos la query por el stemmer y el resultado lo intentamos encontrar en el diccionario.
         stem = self.stemmer.stem(term)
-        field = "all" if field is None else field
+        field = self.def_field if field is None else field
         if(stem in self.sindex[field]):
+            #Si encontramos el stem en el diccionario devolvemos la posting list asociada
             return self.sindex[field][stem]
         else:
+            #Sino devolvemos una lista vacía
             return []
 
     def get_permuterm(self, term:str, field:Optional[str]=None):
         """
-
         Devuelve la posting list asociada a un termino utilizando el indice permuterm.
         NECESARIO PARA LA AMPLIACION DE PERMUTERM
 
@@ -814,15 +853,16 @@ class SAR_Indexer:
                 "field": campo sobre el que se debe recuperar la posting list, solo necesario se se hace la ampliacion de multiples indices
 
         return: posting list
-
         """
-        field = "all" if field is None else field
+        #Permutamos la string hasta que la wildcard este al final de la palabra
+        field = self.def_field if field is None else field
         perm = "".join([term,'$'])
         while((perm[-1] != "*") and (perm[-1] != "?")):
             perm = "".join([perm[-1:],perm[:-1]])
         simbolo = perm[-1]
         perm = perm[:-1]
-        #Busqueda binaria :(
+
+        #Busqueda binaria
         inicio = 0
         fin = len(self.ptindex[field])-1
         while(inicio <= fin):
@@ -831,22 +871,29 @@ class SAR_Indexer:
                 fin = medio - 1
             else:
                 inicio = medio + 1
-
+        #Comprobamos si el indice inicio pertenece a la lista
+        if(inicio == len(self.ptindex[field])):
+            return []
+        #Variable con el resultado final:
+        aux = {}
+        #Diferenciamos dos casos:
+        #En el caso de que la wildcard sea *
         if simbolo == '*':
-            aux = set(self.index[field][self.ptindex[field][inicio][1]])
-            inicio += 1
+            #Mientras el permuterm empiece por nuestra query (perm) añadimos la posting list
             while self.ptindex[field][inicio][0].startswith(perm) and inicio < len(self.ptindex[field]):
                 aux.update(self.index[field][self.ptindex[field][inicio][1]])
                 inicio += 1
-            return list(sorted(aux))
+        #En el caso de que la wildcard sea ?
         else:       
-            aux = {}
             longitud = len(perm)
+            '''Mientras el permuterm empiece por nuestra query y la longitud del permuterm sea 
+            1 mas que la query añadimos la posting list'''
             while self.ptindex[field][inicio][0].startswith(perm) and inicio < len(self.ptindex[field]):
                 if (longitud+1 == len(self.ptindex[field][inicio][0])):
                     aux.update(self.index[field][self.ptindex[field][inicio][1]])
                 inicio += 1
-            return list(sorted(aux))
+        #Devolvemos el resultado ordenado        
+        return list(sorted(aux))
 
 
 
@@ -869,24 +916,24 @@ class SAR_Indexer:
         ## COMPLETAR PARA TODAS LAS VERSIONES ##
         ########################################
         notlist=list()
-        pcont=0
-        articles=list(self.articles.keys())
-        i=0
+        #auxiliares para recorrer las listas
+        pcont=0;i=0
+        #articulos indexados
+        articles=[*self.articles]
 
+        #Si el id en p es mayor se añade el valor del id en articles.
+        #Si son iguales no se añade y se sigue a la siguiente iteración.
+        #Si el id en articles es mayor es porque ya se ha acabado los ids de p, por tanto se añade el resto.
         while(pcont<len(p)):
             if(p[pcont]>articles[i]):
                 notlist.append(articles[i])
                 i+=1
-            elif(articles[i]>p[pcont]):
-                notlist.append(articles[i])
-                pcont+=1
-            else:
+            elif(articles[i]==p[pcont]):
                 i+=1
                 pcont+=1
         while(i<len(articles)):
             notlist.append(articles[i])
             i+=1
-
 
         return notlist
 
@@ -1137,7 +1184,7 @@ class SAR_Indexer:
                                 for q in self.query_words(query):
                                     
                                     # expresion regular que encuentra una frase con la palabra dada
-                                    frase_regex = re.compile(rf'(^|\.\s|\n)([^\.\n]*\b{q}\b[^\.\n]*)(?=\.\s|\n|$)', re.IGNORECASE) 
+                                    frase_regex = re.compile(rf'(^|(?<=\.\s)|(?<=\n))([^\.\n]*\b{q}\b[^\.\n]*)(?=\.?\s|$)', re.IGNORECASE) 
                                     # saca las frases en las que aparece la palabra
                                     frases = frase_regex.finditer(j['all'])
                                     res_snippets = ''
