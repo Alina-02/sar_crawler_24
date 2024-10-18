@@ -57,6 +57,8 @@ class SAR_Indexer:
         self.use_ranking = False  # valor por defecto, se cambia con self.set_ranking()
         self.parpos={}
 
+        # ALT ANADIR 
+
     ###############################
     ###                         ###
     ###      CONFIGURACION      ###
@@ -725,9 +727,8 @@ class SAR_Indexer:
 
         """
         ########################################
-        ## COMPLETAR PARA TODAS LAS VERSIONES ##
+        ##    ALT - MODIFICAR                 ##
         ########################################
-        pass
 
         """
             primero comprueba si es una solicitud no válida, es decir, 
@@ -1219,4 +1220,16 @@ class SAR_Indexer:
         return filtered_words
 
         
-
+    def set_spelling(self, use_spelling:bool, distance:str=None, threshold:int=None):
+            """
+            self.use_spelling a True activa la correcciÃ³n ortogrÃ¡fica
+            EN LAS PALABRAS NO ENCONTRADAS, en caso contrario NO utilizarÃ¡
+            correcciÃ³n ortogrÃ¡fica
+            
+            input: "use_spell" booleano, determina el uso del corrector.
+                    "distance" cadena, nombre de la funciÃ³n de distancia.
+                    "threshold" entero, umbral del corrector
+            """
+            
+            # ALT - COMPLETAR        
+            pass
