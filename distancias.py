@@ -16,9 +16,53 @@ def levenshtein_matriz(x, y, threshold=None):
                 D[i - 1][j - 1] + (x[i - 1] != y[j - 1]),
             )
     return D[lenX, lenY]
+    
 
-def new_levenshtein_matriz(x, y, threshold=None):
+def levenshtein_edicion(x, y, threshold=None):
+    # a partir de la versión levenshtein_matriz
 
+    #calculamos matriz de edición
+    lenX, lenY = len(x), len(y)
+    D = np.zeros((lenX + 1, lenY + 1), dtype=np.int32)
+    for i in range(1, lenX + 1):
+        D[i][0] = D[i - 1][0] + 1
+    for j in range(1, lenY + 1):
+        D[0][j] = D[0][j - 1] + 1
+        for i in range(1, lenX + 1):
+            D[i][j] = min(
+                D[i - 1][j] + 1,
+                D[i][j - 1] + 1,
+                D[i - 1][j - 1] + (x[i - 1] != y[j - 1]),
+            )
+
+    #recuperamos el camino seguido
+    camino = []
+
+    # Recorremos la matriz en sentido inverso
+    while i > 0 or j > 0:
+        if i > 0 and D[i][j] == D[i-1][j] + 1:
+            # Operación de eliminación
+            camino.append((x[i-1], ''))  # Eliminación de x[i-1]
+            i -= 1
+        elif j > 0 and D[i][j] == D[i][j-1] + 1:
+            # Operación de inserción
+            camino.append(('', y[j-1]))  # Inserción de y[j-1]
+            j -= 1
+        else:
+            # Operación de sustitución o coincidencia
+            if x[i-1] != y[j-1]:
+                camino.append((x[i-1], y[j-1]))  # Sustitución de x[i-1] por y[j-1]
+            else:
+                camino.append((x[i-1], x[i-1]))  # Coincidencia, no hay cambio
+            i -= 1
+            j -= 1
+
+    # Invertimos el camino para que esté en orden desde el inicio
+    camino.reverse()
+
+    return int(D[lenX, lenY]), camino # COMPLETAR Y REEMPLAZAR ESTA PARTE
+
+def levenshtein_reduccion(x, y, threshold=None):
     toomuch = False #si se pasa del threshold
     lenX, lenY = len(x), len(y) #longitud de las cadenas
     current_row = [None] * (1 + lenX) #la fila actual (longitud de la primera palabra + 1)
@@ -42,14 +86,6 @@ def new_levenshtein_matriz(x, y, threshold=None):
                 threshold = True
                 break
     return current_row[lenX]
-
-def levenshtein_edicion(x, y, threshold=None):
-    # a partir de la versión levenshtein_matriz
-    return 0,[] # COMPLETAR Y REEMPLAZAR ESTA PARTE
-
-def levenshtein_reduccion(x, y, threshold=None):
-    # completar versión con reducción coste espacial
-    return 0 # COMPLETAR Y REEMPLAZAR ESTA PARTE
 
 def levenshtein(x, y, threshold):
     # completar versión reducción coste espacial y parada por threshold
@@ -105,4 +141,4 @@ opcionesEdicion = {
 }
 
 if __name__ == "__main__":
-    print(levenshtein_matriz("ejemplo", "campos"))
+    print(levenshtein_edicion("ejemplo", "campos"))
