@@ -111,7 +111,29 @@ def levenshtein(x, y, threshold):
     return current_row[lenX]
 
 def levenshtein_cota_optimista(x, y, threshold):
-    return 0 # COMPLETAR Y REEMPLAZAR ESTA PARTE
+    
+    vocab = {}
+
+    # recorremos x sumando
+    for letter in x:
+        if letter not in vocab:
+            vocab[letter] = 0
+        vocab[letter] += 1
+
+    # recorremos y restando
+    for letter in y:
+        if letter not in vocab:
+            vocab[letter] = 0
+        vocab[letter] -= 1
+
+    #devolvemos el maximo valor en valor absoluto
+    diferencias = list(vocab.values())
+
+    #devolver el de mayor valor absoluto
+    maxDiff = max(diferencias, key=abs)
+    print(maxDiff)
+    if maxDiff>threshold: return threshold+1
+    else: return levenshtein(x, y, threshold)
 
 def damerau_restricted_matriz(x, y, threshold=None):
     # completar versión Damerau-Levenstein restringida con matriz
@@ -160,4 +182,4 @@ opcionesEdicion = {
 }
 
 if __name__ == "__main__":
-    print(levenshtein_edicion("ejemplo", "campos"))
+    print(levenshtein_cota_optimista("casa", "abad",6))
