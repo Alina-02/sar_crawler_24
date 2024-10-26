@@ -60,9 +60,32 @@ def levenshtein_edicion(x, y, threshold=None):
     # Invertimos el camino para que esté en orden desde el inicio
     camino.reverse()
 
-    return int(D[lenX, lenY]), camino # COMPLETAR Y REEMPLAZAR ESTA PARTE
+    return int(D[lenX, lenY]), camino
 
+#levenshtein menos coste espacial no theshold
 def levenshtein_reduccion(x, y, threshold=None):
+    toomuch = False #si se pasa del threshold
+    lenX, lenY = len(x), len(y) #longitud de las cadenas
+    current_row = [None] * (1 + lenX) #la fila actual (longitud de la primera palabra + 1)
+    previous_row = [None] * (1 + lenX) #la fila previa (longitud de la primera palabra + 1)
+    current_row[0] = 0 
+
+    for i in range(1, lenX + 1): #desde el principio de la primera palabra hasta su final
+        current_row[i] = current_row[i - 1] + 1 #la columna actual es es coste de la columna anterior + 1
+    for j in range(1, lenY + 1): #recorre la segunda palabra
+        if toomuch: break
+        previous_row, current_row = current_row, previous_row #la fila actual se guarda en previous y se modifica la actual (usando la previous)
+        current_row[0] = previous_row[0] + 1 #inicializa el primer elemento de la nueva fila
+        for i in range(1, lenX + 1): #añade los costes de la fila
+            current_row[i] = min( #elige el mínimo entre
+                current_row[i - 1] + 1, #lado izquierdo
+                previous_row[i] + 1, #abajo
+                previous_row[i - 1] + (x[i - 1] != y[j - 1]), #diagonal
+            )
+    return current_row[lenX]
+
+#levenshtein coste espacial threshold
+def levenshtein(x, y, threshold):
     toomuch = False #si se pasa del threshold
     lenX, lenY = len(x), len(y) #longitud de las cadenas
     current_row = [None] * (1 + lenX) #la fila actual (longitud de la primera palabra + 1)
@@ -86,10 +109,6 @@ def levenshtein_reduccion(x, y, threshold=None):
                 threshold = True
                 break
     return current_row[lenX]
-
-def levenshtein(x, y, threshold):
-    # completar versión reducción coste espacial y parada por threshold
-    return min(0,threshold+1) # COMPLETAR Y REEMPLAZAR ESTA PARTE
 
 def levenshtein_cota_optimista(x, y, threshold):
     return 0 # COMPLETAR Y REEMPLAZAR ESTA PARTE
