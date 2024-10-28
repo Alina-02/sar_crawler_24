@@ -86,7 +86,6 @@ def levenshtein_reduccion(x, y, threshold=None):
 
 #levenshtein coste espacial threshold
 def levenshtein(x, y, threshold):
-    toomuch = False #si se pasa del threshold
     lenX, lenY = len(x), len(y) #longitud de las cadenas
     current_row = [None] * (1 + lenX) #la fila actual (longitud de la primera palabra + 1)
     previous_row = [None] * (1 + lenX) #la fila previa (longitud de la primera palabra + 1)
@@ -95,7 +94,6 @@ def levenshtein(x, y, threshold):
     for i in range(1, lenX + 1): #desde el principio de la primera palabra hasta su final
         current_row[i] = current_row[i - 1] + 1 #la columna actual es es coste de la columna anterior + 1
     for j in range(1, lenY + 1): #recorre la segunda palabra
-        if toomuch: break
         previous_row, current_row = current_row, previous_row #la fila actual se guarda en previous y se modifica la actual (usando la previous)
         current_row[0] = previous_row[0] + 1 #inicializa el primer elemento de la nueva fila
         for i in range(1, lenX + 1): #añade los costes de la fila
@@ -104,10 +102,8 @@ def levenshtein(x, y, threshold):
                 previous_row[i] + 1, #abajo
                 previous_row[i - 1] + (x[i - 1] != y[j - 1]), #diagonal
             )
-            if current_row[i] > threshold: 
-                current_row[lenX] = None
-                threshold = True
-                break
+        if min(current_row) > threshold: 
+            return threshold+1
     return current_row[lenX]
 
 def levenshtein_cota_optimista(x, y, threshold):
@@ -131,24 +127,107 @@ def levenshtein_cota_optimista(x, y, threshold):
 
     #devolver el de mayor valor absoluto
     maxDiff = max(diferencias, key=abs)
-    print(maxDiff)
     if maxDiff>threshold: return threshold+1
     else: return levenshtein(x, y, threshold)
 
 def damerau_restricted_matriz(x, y, threshold=None):
     # completar versión Damerau-Levenstein restringida con matriz
     lenX, lenY = len(x), len(y)
-    # COMPLETAR
-    return 0 # COMPLETAR Y REEMPLAZAR ESTA PARTE
+    D = np.zeros((lenX + 1, lenY + 1), dtype=np.int32)
+    for i in range(1, lenX + 1):
+        D[i][0] = D[i - 1][0] + 1
+    for j in range(1, lenY + 1):
+        D[0][j] = D[0][j - 1] + 1
+        for i in range(1, lenX + 1):
+            D[i][j] = min(
+                D[i - 1][j] + 1,
+                D[i][j - 1] + 1,
+                D[i - 1][j - 1] + (x[i - 1] != y[j - 1]),
+            )
+            if i >= 2 and x[i-2] == y[j-1] and x[i-1] == y[j-2]:
+                D[i][j] = min(D[i][j],D[i-2][j-2]+1)
+    return D[lenX, lenY]
 
 def damerau_restricted_edicion(x, y, threshold=None):
-    # partiendo de damerau_restricted_matriz añadir recuperar
-    # secuencia de operaciones de edición
-    return 0,[] # COMPLETAR Y REEMPLAZAR ESTA PARTE
+    lenX, lenY = len(x), len(y)
+    D = np.zeros((lenX + 1, lenY + 1), dtype=np.int32)
+    for i in range(1, lenX + 1):
+        D[i][0] = D[i - 1][0] + 1
+    for j in range(1, lenY + 1):
+        D[0][j] = D[0][j - 1] + 1
+        for i in range(1, lenX + 1):
+            D[i][j] = min(
+                D[i - 1][j] + 1,
+                D[i][j - 1] + 1,
+                D[i - 1][j - 1] + (x[i - 1] != y[j - 1]),
+            )
+            if i >= 2 and x[i-2] == y[j-1] and x[i-1] == y[j-2]:
+                D[i][j] = min(D[i][j],D[i-2][j-2]+1)
+    #recuperamos el camino seguido
+    camino = []
+
+    # Recorremos la matriz en sentido inverso
+    while i > 0 or j > 0:
+        if i > 0 and D[i][j] == D[i-1][j] + 1:
+            # Operación de eliminación
+            camino.append((x[i-1], ''))  # Eliminación de x[i-1]
+            i -= 1
+        elif j > 0 and D[i][j] == D[i][j-1] + 1:
+            # Operación de inserción
+            camino.append(('', y[j-1]))  # Inserción de y[j-1]
+            j -= 1
+        else:
+            # Operación de sustitución o coincidencia
+            if i >= 2 and j >= 2 and x[i-2] == y[j-1] and x[i-1] == y[j-2]:
+                camino.append((str(x[i-2])+str(x[i-1]), str(y[j-2])+str(y[j-1])))
+                i -= 2
+                j -= 2
+            else:
+                if x[i-1] != y[j-1]:
+                    camino.append((x[i-1], y[j-1]))  # Sustitución de x[i-1] por y[j-1]
+                else:
+                    camino.append((x[i-1], x[i-1]))  # Coincidencia, no hay cambio
+                i -= 1
+                j -= 1
+
+    # Invertimos el camino para que esté en orden desde el inicio
+    camino.reverse()
+
+    return D[lenX, lenY], camino
 
 def damerau_restricted(x, y, threshold=None):
     # versión con reducción coste espacial y parada por threshold
-     return min(0,threshold+1) # COMPLETAR Y REEMPLAZAR ESTA PARTE
+    lenX, lenY = len(x), len(y)
+    current_row = [None] * (1 + lenX) 
+    previous_row = [None] * (1 + lenX) 
+    pprevious_row = [None] * (1 + lenX) 
+    current_row[0] = 0 
+
+    for i in range(1, lenX + 1): 
+        current_row[i] = current_row[i - 1] + 1
+    if lenY >= 1:
+        previous_row, current_row = current_row, previous_row 
+        current_row[0] = previous_row[0] + 1 
+        for i in range(1, lenX + 1): 
+            current_row[i] = min( 
+                current_row[i - 1] + 1, 
+                previous_row[i] + 1,
+                previous_row[i - 1] + (x[i - 1] != y[1 - 1]),
+            )
+    for j in range(2, lenY + 1): 
+        pprevious_row, previous_row, current_row = previous_row, current_row, pprevious_row
+        current_row[0] = previous_row[0] + 1 
+        for i in range(1, lenX + 1):  
+            current_row[i] = min( 
+                current_row[i - 1] + 1, 
+                previous_row[i] + 1,
+                previous_row[i - 1] + (x[i - 1] != y[j - 1]),
+            )
+            if i >= 2 and x[i-2] == y[j-1] and x[i-1] == y[j-2]:
+                current_row[i] = min(current_row[i],pprevious_row[i-2]+1)
+        if min(current_row) > threshold:
+            return threshold+1
+    return current_row[lenX]
 
 def damerau_intermediate_matriz(x, y, threshold=None):
     # completar versión Damerau-Levenstein intermedia con matriz
