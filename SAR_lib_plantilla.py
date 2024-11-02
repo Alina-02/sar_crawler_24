@@ -7,6 +7,7 @@ import math
 from pathlib import Path
 from typing import Optional, List, Union, Dict
 import pickle
+from distancias.py import opcionesSpell
 
 class SAR_Indexer:
     """
@@ -56,6 +57,8 @@ class SAR_Indexer:
         self.use_stemming = False # valor por defecto, se cambia con self.set_stemming()
         self.use_ranking = False  # valor por defecto, se cambia con self.set_ranking()
         self.parpos={}
+        self.use_spelling = False
+        self.speller = None
 
         # ALT ANADIR 
 
@@ -65,6 +68,21 @@ class SAR_Indexer:
     ###                         ###
     ###############################
 
+    def set_spelling(self, use_spelling:bool, distance:str=None, threshold:int=None):
+
+        """
+        self.use_spelling a True activa la corrección ortográfica
+        EN LAS PALABRAS NO ENCONTRADAS, en caso contrario NO utilizará
+        corrección ortográfica
+
+        input: "use_spell" booleano, determina el uso del corrector
+               "distance" cadena, nombre de la función de distancia
+               "threshold" entero, umbral del corrector
+        """
+
+
+        vocabulary = list(self.index)
+        self.speller = SpellSuggester(self, opcionesSpell, vocabulary, distance, threshold)
 
     def set_showall(self, v:bool):
         """
