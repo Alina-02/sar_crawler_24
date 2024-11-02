@@ -771,22 +771,37 @@ class SAR_Indexer:
             si falla el método implica que el término no se ha encontrado en el 
             diccionario y, por tanto, su posting list corresponde a una lista vacía
         """
+        res = None
+
         try:
             # si tiene comodines usar permuterm
             if '*' in term or '?' in term:
-                return self.get_permuterm(term, field)
+                res = self.get_permuterm(term, field)
             # si tiene dobles comillas usar posicionales
             elif(term[0] == '"'):
-                return self.get_positionals(term, field)
+                res = self.get_positionals(term, field)
             elif(self.use_stemming):
-                return self.get_stemming(term, field)
+                res = self.get_stemming(term, field)
             elif(field != None):
-                return self.index[field][term]
+                res = self.index[field][term]
             else:
-                return self.index['all'][term]
+                res = self.index['all'][term]
         except:
             return []
+
+        """
+            Si se activa use_spell y el término no está en self.index
+            hay que usar self.speller y utilizar suggest con dicho
+            término
+            Si devuelve una lista no vacía de palabras, hay que buscarlas
+            todas (el get_posting original solamente tendría que buscar 
+            una) y juntar todos los términos invertidos en una sola lista.
+              
+         """
+        if(self.useSpell and res == []):
+            self.speller
             
+
 
         
         
