@@ -231,17 +231,123 @@ def damerau_restricted(x, y, threshold=None):
 
 def damerau_intermediate_matriz(x, y, threshold=None):
     # completar versión Damerau-Levenstein intermedia con matriz
-     return min(0,threshold+1) # COMPLETAR Y REEMPLAZAR ESTA PARTE
+    lenX, lenY = len(x), len(y)
+    D = np.zeros((lenX + 1, lenY + 1), dtype=np.int32)
+    for i in range(1, lenX + 1):
+        D[i][0] = D[i - 1][0] + 1
+    for j in range(1, lenY + 1):
+        D[0][j] = D[0][j - 1] + 1
+        for i in range(1, lenX + 1):
+            D[i][j] = min(
+                D[i - 1][j] + 1,
+                D[i][j - 1] + 1,
+                D[i - 1][j - 1] + (x[i - 1] != y[j - 1]),
+            )
+            if i >= 2 and x[i-2] == y[j-1] and x[i-1] == y[j-2]:
+                D[i][j] = min(D[i][j],D[i-2][j-2]+1)
+            if i >= 3 and x[i-3] == y[j-1] and x[i-1] == y[j-2]:
+                D[i][j] = min(D[i][j],D[i-3][j-2]+2)
+            if j >= 3 and x[i-2] == y[j-1] and x[i-1] == y[j-3]:
+                D[i][j] = min(D[i][j],D[i-2][j-3]+2)
+    return D[lenX, lenY]
 
 def damerau_intermediate_edicion(x, y, threshold=None):
     # partiendo de matrix_intermediate_damerau añadir recuperar
     # secuencia de operaciones de edición
     # completar versión Damerau-Levenstein intermedia con matriz
-    return 0,[] # COMPLETAR Y REEMPLAZAR ESTA PARTE
+    lenX, lenY = len(x), len(y)
+    D = np.zeros((lenX + 1, lenY + 1), dtype=np.int32)
+    for i in range(1, lenX + 1):
+        D[i][0] = D[i - 1][0] + 1
+    for j in range(1, lenY + 1):
+        D[0][j] = D[0][j - 1] + 1
+        for i in range(1, lenX + 1):
+            D[i][j] = min(
+                D[i - 1][j] + 1,
+                D[i][j - 1] + 1,
+                D[i - 1][j - 1] + (x[i - 1] != y[j - 1]),
+            )
+            if i >= 2 and j >= 2 and x[i-2] == y[j-1] and x[i-1] == y[j-2]:
+                D[i][j] = min(D[i][j],D[i-2][j-2]+1)
+            if i >= 3 and j >= 2 and x[i-3] == y[j-1] and x[i-1] == y[j-2]:
+                D[i][j] = min(D[i][j],D[i-3][j-2]+2)
+            if i >= 2 and j >= 3 and x[i-2] == y[j-1] and x[i-1] == y[j-3]:
+                D[i][j] = min(D[i][j],D[i-2][j-3]+2)
+
+    camino = []
+
+    while i > 0 or j > 0:
+        if i > 0 and D[i][j] == D[i-1][j] + 1:
+            # Operación de eliminación
+            camino.append((x[i-1], ''))  # Eliminación de x[i-1]
+            i -= 1
+        elif j > 0 and D[i][j] == D[i][j-1] + 1:
+            # Operación de inserción
+            camino.append(('', y[j-1]))  # Inserción de y[j-1]
+            j -= 1
+        else:
+            # Operación de sustitución o coincidencia
+            if i >= 2 and j >= 2 and x[i-2] == y[j-1] and x[i-1] == y[j-2]:
+                camino.append((x[i-2:i],y[j-2:j]))
+                i -= 2
+                j -= 2
+            elif i >= 3 and j >= 2 and x[i-3] == y[j-1] and x[i-1] == y[j-2]:
+                camino.append((x[i-3:i],y[j-2:j]))
+                i -= 3
+                j -= 2
+            elif i >= 2 and j >= 3 and x[i-2] == y[j-1] and x[i-1] == y[j-3]:
+                camino.append((x[i-2:i],y[j-3:j]))
+                i -= 2
+                j -= 3
+            else:
+                if x[i-1] != y[j-1]:
+                    camino.append((x[i-1], y[j-1]))  # Sustitución de x[i-1] por y[j-1]
+                else:
+                    camino.append((x[i-1], x[i-1]))  # Coincidencia, no hay cambio
+                i -= 1
+                j -= 1
+
+    # Invertimos el camino para que esté en orden desde el inicio
+    camino.reverse()
+
+    return D[lenX, lenY], camino
+
     
 def damerau_intermediate(x, y, threshold=None):
     # versión con reducción coste espacial y parada por threshold
-    return min(0,threshold+1) # COMPLETAR Y REEMPLAZAR ESTA PARTE
+    lenX, lenY = len(x), len(y)
+    current_row = [None] * (1 + lenX) 
+    previous_row = [None] * (1 + lenX) 
+    pprevious_row = [None] * (1 + lenX)
+    ppprevious_row = [None] * (1 + lenX)
+    current_row[0] = 0 
+
+    for i in range(1, lenX + 1): 
+        current_row[i] = current_row[i - 1] + 1
+    for j in range(1, lenY + 1):
+        if j==1:
+            previous_row, current_row = current_row, previous_row
+        elif j==2:
+            pprevious_row, previous_row, current_row = previous_row, current_row, pprevious_row
+        elif j>=3:
+            ppprevious_row, pprevious_row, previous_row, current_row = pprevious_row, previous_row, current_row, ppprevious_row
+            
+        current_row[0] = previous_row[0] + 1 
+        for i in range(1, lenX + 1):  
+            current_row[i] = min( 
+                current_row[i - 1] + 1, 
+                previous_row[i] + 1,
+                previous_row[i - 1] + (x[i - 1] != y[j - 1]),
+            )
+            if i >= 2 and j >= 2 and x[i-2] == y[j-1] and x[i-1] == y[j-2]:
+                current_row[i] = min(current_row[i],pprevious_row[i-2]+1)
+            if i >= 3 and j >= 2 and x[i-3] == y[j-1] and x[i-1] == y[j-2]:
+                current_row[i] = min(current_row[i],pprevious_row[i-3]+2)
+            if i >= 2 and j >= 3 and x[i-2] == y[j-1] and x[i-1] == y[j-3]:
+                current_row[i] = min(current_row[i],ppprevious_row[i-2]+2)
+        if min(current_row) > threshold:
+            return threshold+1
+    return current_row[lenX]
 
 opcionesSpell = {
     'levenshtein_m': levenshtein_matriz,
@@ -261,4 +367,4 @@ opcionesEdicion = {
 }
 
 if __name__ == "__main__":
-    print(levenshtein_cota_optimista("casa", "abad",6))
+    print(damerau_intermediate_edicion("algoritmo","algortximo"))
