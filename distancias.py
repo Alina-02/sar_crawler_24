@@ -325,12 +325,7 @@ def damerau_intermediate(x, y, threshold=None):
     for i in range(1, lenX + 1): 
         current_row[i] = current_row[i - 1] + 1
     for j in range(1, lenY + 1):
-        if j==1:
-            previous_row, current_row = current_row, previous_row
-        elif j==2:
-            pprevious_row, previous_row, current_row = previous_row, current_row, pprevious_row
-        elif j>=3:
-            ppprevious_row, pprevious_row, previous_row, current_row = pprevious_row, previous_row, current_row, ppprevious_row
+        ppprevious_row, pprevious_row, previous_row, current_row = pprevious_row, previous_row, current_row, ppprevious_row
             
         current_row[0] = previous_row[0] + 1 
         for i in range(1, lenX + 1):  
