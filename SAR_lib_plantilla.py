@@ -69,6 +69,22 @@ class SAR_Indexer:
     ###                         ###
     ###############################
 
+    def set_spelling(self, use_spelling:bool, distance:str=None, threshold:int=None):
+
+        """
+        self.use_spelling a True activa la corrección ortográfica
+        EN LAS PALABRAS NO ENCONTRADAS, en caso contrario NO utilizará
+        corrección ortográfica
+
+        input: "use_spell" booleano, determina el uso del corrector
+               "distance" cadena, nombre de la función de distancia
+               "threshold" entero, umbral del corrector
+        """
+
+        self.use_spelling = use_spelling
+        vocabulary = list(self.index)
+        self.speller = SpellSuggester(opcionesSpell, vocabulary, distance, threshold)
+
     def set_showall(self, v:bool):
         """
 
@@ -1240,19 +1256,4 @@ class SAR_Indexer:
         return filtered_words
 
         
-    def set_spelling(self, use_spelling:bool, distance:str=None, threshold:int=None):
-            """
-            self.use_spelling a True activa la correcciÃ³n ortogrÃ¡fica
-            EN LAS PALABRAS NO ENCONTRADAS, en caso contrario NO utilizarÃ¡
-            correcciÃ³n ortogrÃ¡fica
-            
-            input: "use_spell" booleano, determina el uso del corrector.
-                    "distance" cadena, nombre de la funciÃ³n de distancia.
-                    "threshold" entero, umbral del corrector
-            """
-            
-            # ALT - COMPLETAR        
-            
-            self.use_spelling = use_spelling
-            vocabulary = list(self.index)
-            self.speller = SpellSuggester(self, opcionesSpell, vocabulary, distance, threshold)
+
