@@ -7,7 +7,8 @@ import math
 from pathlib import Path
 from typing import Optional, List, Union, Dict
 import pickle
-from distancias.py import opcionesSpell
+from distancias import opcionesSpell
+from spellsuggester import SpellSuggester
 
 class SAR_Indexer:
     """
@@ -67,22 +68,6 @@ class SAR_Indexer:
     ###      CONFIGURACION      ###
     ###                         ###
     ###############################
-
-    def set_spelling(self, use_spelling:bool, distance:str=None, threshold:int=None):
-
-        """
-        self.use_spelling a True activa la corrección ortográfica
-        EN LAS PALABRAS NO ENCONTRADAS, en caso contrario NO utilizará
-        corrección ortográfica
-
-        input: "use_spell" booleano, determina el uso del corrector
-               "distance" cadena, nombre de la función de distancia
-               "threshold" entero, umbral del corrector
-        """
-
-
-        vocabulary = list(self.index)
-        self.speller = SpellSuggester(self, opcionesSpell, vocabulary, distance, threshold)
 
     def set_showall(self, v:bool):
         """
@@ -798,9 +783,11 @@ class SAR_Indexer:
             una) y juntar todos los términos invertidos en una sola lista.
               
          """
-        if(self.useSpell and res == []):
-            self.speller
-            
+        if(self.use_spelling and res == []):
+            print("hola", self.speller.suggest(term))
+            return self.speller.suggest(term)
+        else:
+            print(res)
 
 
         
@@ -1265,4 +1252,7 @@ class SAR_Indexer:
             """
             
             # ALT - COMPLETAR        
-            pass
+            
+            self.use_spelling = use_spelling
+            vocabulary = list(self.index)
+            self.speller = SpellSuggester(self, opcionesSpell, vocabulary, distance, threshold)
