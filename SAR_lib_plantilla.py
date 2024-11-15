@@ -802,10 +802,10 @@ class SAR_Indexer:
         if(self.use_spelling and res == []):
             print("hola", self.speller.suggest(term))
             return self.speller.suggest(term)
-        else:
-            print(res)
-            return res
+        
 
+
+        return [] if res == None else return res
 
         
         
