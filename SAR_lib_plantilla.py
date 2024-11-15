@@ -788,7 +788,7 @@ class SAR_Indexer:
             else:
                 res = self.index['all'][term]
         except:
-            return []
+            res = []
 
         """
             Si se activa use_spell y el término no está en self.index
@@ -804,6 +804,7 @@ class SAR_Indexer:
             return self.speller.suggest(term)
         else:
             print(res)
+            return res
 
 
         
