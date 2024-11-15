@@ -805,7 +805,7 @@ class SAR_Indexer:
         
 
 
-        return [] if res == None else return res
+        return [] if res == None else res
 
         
         
