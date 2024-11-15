@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import re
+from distancias import *
 
 class SpellSuggester:
 
@@ -76,6 +77,20 @@ class SpellSuggester:
         ########################################
         
         resul = []
+
+        for voc in self.vocabulary:
+            if abs(len(voc)-len(term)) > threshold: d = threshold + 1
+            elif distance == "levenshtein":
+                d = levenshtein_cota_optimista(term,voc,threshold)
+                if d<=threshold:
+                    d = levenshtein(term,voc,threshold)
+                else: d = threshold+1
+            elif distance == "damerau_r":
+                d = damerau_restricted(term,voc,threshold)
+            else:
+                d = damerau_intermediate(term,voc,threshold)
+            if d <= threshold: resul.append(voc)
+
         if flatten:
             resul = [word for wlist in resul for word in wlist]
             
