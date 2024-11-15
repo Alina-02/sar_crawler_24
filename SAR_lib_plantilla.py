@@ -801,11 +801,16 @@ class SAR_Indexer:
          """
         if(self.use_spelling and res == []):
             print("hola", self.speller.suggest(term))
-            return self.speller.suggest(term)
-        
+            words = self.speller.suggest(term)
+            res = []
+            for word in words:
+                posting = self.get_posting(word,field)
+                res = self.or_posting(res,posting)
 
 
         return [] if res == None else res
+            
+
 
         
         

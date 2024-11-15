@@ -82,6 +82,39 @@ class SpellSuggester:
             distancia = self.distance_functions[distance](term,voc,threshold)
             if(distancia<=threshold):
                     resul[distancia].append(voc)
+            # if abs(len(voc)-len(term)) > threshold: d = threshold + 1
+
+            # elif distance == "levenshtein":
+            #     d = levenshtein_cota_optimista(term,voc,threshold)
+            #     if d<=threshold:
+            #         d = levenshtein(term,voc,threshold)
+            #     else: d = threshold+1
+
+            # elif distance == "damerau_r":
+            #     d = damerau_restricted(term,voc,threshold)
+
+            # elif distance=="levenshtein_m":
+            #     d = levenshtein_matriz(term,voc,threshold)
+
+            # elif distance=="levenshtein_r":
+            #     d = levenshtein_reduccion(term,voc,threshold)
+
+            # elif distance=="levenshtein_o":
+            #     d = levenshtein_cota_optimista(term,voc,threshold)
+                    
+            # elif distance=="damerau_rm":
+            #     d = damerau_restricted_matriz(term,voc,threshold)
+                    
+            # elif distance=="damerau_r":
+            #     d = damerau_restricted(term,voc,threshold)
+                    
+            # elif distance=="damerau_im":
+            #     d = damerau_intermediate_matriz(term,voc,threshold)    
+            # else:
+            #     d = damerau_intermediate(term,voc,threshold)
+
+            # if d <= threshold: resul.append(voc)
+    
 
         if flatten:
             resul = [word for wlist in resul for word in wlist]
