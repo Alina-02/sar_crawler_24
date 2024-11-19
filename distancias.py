@@ -239,16 +239,16 @@ def damerau_intermediate_matriz(x, y, threshold=None):
         D[0][j] = D[0][j - 1] + 1
         for i in range(1, lenX + 1):
             D[i][j] = min(
-                D[i - 1][j] + 1,
-                D[i][j - 1] + 1,
-                D[i - 1][j - 1] + (x[i - 1] != y[j - 1]),
+                D[i - 1][j] + 1, #operación de borrado con coste 1
+                D[i][j - 1] + 1, #operación de inserción con coste 1
+                D[i - 1][j - 1] + (x[i - 1] != y[j - 1]), #operación de sustitución, coste 1 si son carácteres distintos, 0 en caso contrario
             )
             if i >= 2 and x[i-2] == y[j-1] and x[i-1] == y[j-2]:
-                D[i][j] = min(D[i][j],D[i-2][j-2]+1)
+                D[i][j] = min(D[i][j],D[i-2][j-2]+1) #operación de transposición con coste 1 (ab <-> ba)
             if i >= 3 and x[i-3] == y[j-1] and x[i-1] == y[j-2]:
-                D[i][j] = min(D[i][j],D[i-3][j-2]+2)
+                D[i][j] = min(D[i][j],D[i-3][j-2]+2) #operación de transposición con coste 2, tal que (acb <-> ba)
             if j >= 3 and x[i-2] == y[j-1] and x[i-1] == y[j-3]:
-                D[i][j] = min(D[i][j],D[i-2][j-3]+2)
+                D[i][j] = min(D[i][j],D[i-2][j-3]+2) #operación de transposición con coste 2, tal que (ab <-> bca)
     return D[lenX, lenY]
 
 def damerau_intermediate_edicion(x, y, threshold=None):
@@ -276,6 +276,7 @@ def damerau_intermediate_edicion(x, y, threshold=None):
 
     camino = []
 
+    #Recuperación del camino
     while i > 0 or j > 0:
         if i > 0 and D[i][j] == D[i-1][j] + 1:
             # Operación de eliminación
@@ -286,19 +287,22 @@ def damerau_intermediate_edicion(x, y, threshold=None):
             camino.append(('', y[j-1]))  # Inserción de y[j-1]
             j -= 1
         else:
-            # Operación de sustitución o coincidencia
+            #Caso transposición restringida (ab <-> ba)
             if i >= 2 and j >= 2 and x[i-2] == y[j-1] and x[i-1] == y[j-2]:
                 camino.append((x[i-2:i],y[j-2:j]))
                 i -= 2
                 j -= 2
+            #Caso transposición: (acb <-> ba)
             elif i >= 3 and j >= 2 and x[i-3] == y[j-1] and x[i-1] == y[j-2]:
                 camino.append((x[i-3:i],y[j-2:j]))
                 i -= 3
                 j -= 2
+            #Caso transposición: (ab <-> bca)
             elif i >= 2 and j >= 3 and x[i-2] == y[j-1] and x[i-1] == y[j-3]:
                 camino.append((x[i-2:i],y[j-3:j]))
                 i -= 2
                 j -= 3
+            # Operación de sustitución o coincidencia
             else:
                 if x[i-1] != y[j-1]:
                     camino.append((x[i-1], y[j-1]))  # Sustitución de x[i-1] por y[j-1]
@@ -315,6 +319,7 @@ def damerau_intermediate_edicion(x, y, threshold=None):
     
 def damerau_intermediate(x, y, threshold=None):
     # versión con reducción coste espacial y parada por threshold
+    #Se utilizan 4 vectores columna
     lenX, lenY = len(x), len(y)
     current_row = [None] * (1 + lenX) 
     previous_row = [None] * (1 + lenX) 
@@ -322,12 +327,15 @@ def damerau_intermediate(x, y, threshold=None):
     ppprevious_row = [None] * (1 + lenX)
     current_row[0] = 0 
 
+    #Se inicializa el vector columna actual
     for i in range(1, lenX + 1): 
         current_row[i] = current_row[i - 1] + 1
     for j in range(1, lenY + 1):
+        #Se actualiza cada vector
         ppprevious_row, pprevious_row, previous_row, current_row = pprevious_row, previous_row, current_row, ppprevious_row
             
         current_row[0] = previous_row[0] + 1 
+        #Calculo de la operación de menor coste para todo el vector columna actual
         for i in range(1, lenX + 1):  
             current_row[i] = min( 
                 current_row[i - 1] + 1, 
@@ -340,6 +348,7 @@ def damerau_intermediate(x, y, threshold=None):
                 current_row[i] = min(current_row[i],pprevious_row[i-3]+2)
             if i >= 2 and j >= 3 and x[i-2] == y[j-1] and x[i-1] == y[j-3]:
                 current_row[i] = min(current_row[i],ppprevious_row[i-2]+2)
+        #Implementación de la parada por threshold
         if min(current_row) > threshold:
             return threshold+1
     return current_row[lenX]
