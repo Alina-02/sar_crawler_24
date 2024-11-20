@@ -144,7 +144,7 @@ def damerau_restricted_matriz(x, y, threshold=None):
                 D[i][j - 1] + 1,
                 D[i - 1][j - 1] + (x[i - 1] != y[j - 1]),
             )
-            if i >= 2 and x[i-2] == y[j-1] and x[i-1] == y[j-2]:
+            if i >= 2 and j>=2 and x[i-2] == y[j-1] and x[i-1] == y[j-2]:
                 D[i][j] = min(D[i][j],D[i-2][j-2]+1)
     return D[lenX, lenY]
 
@@ -161,7 +161,7 @@ def damerau_restricted_edicion(x, y, threshold=None):
                 D[i][j - 1] + 1,
                 D[i - 1][j - 1] + (x[i - 1] != y[j - 1]),
             )
-            if i >= 2 and x[i-2] == y[j-1] and x[i-1] == y[j-2]:
+            if i >= 2 and j>=2 and x[i-2] == y[j-1] and x[i-1] == y[j-2]:
                 D[i][j] = min(D[i][j],D[i-2][j-2]+1)
     #recuperamos el camino seguido
     camino = []
@@ -243,11 +243,11 @@ def damerau_intermediate_matriz(x, y, threshold=None):
                 D[i][j - 1] + 1, #operación de inserción con coste 1
                 D[i - 1][j - 1] + (x[i - 1] != y[j - 1]), #operación de sustitución, coste 1 si son carácteres distintos, 0 en caso contrario
             )
-            if i >= 2 and x[i-2] == y[j-1] and x[i-1] == y[j-2]:
+            if i >= 2 and j>=2 and x[i-2] == y[j-1] and x[i-1] == y[j-2]:
                 D[i][j] = min(D[i][j],D[i-2][j-2]+1) #operación de transposición con coste 1 (ab <-> ba)
-            if i >= 3 and x[i-3] == y[j-1] and x[i-1] == y[j-2]:
+            if i >= 3 and j>=2 and x[i-3] == y[j-1] and x[i-1] == y[j-2]:
                 D[i][j] = min(D[i][j],D[i-3][j-2]+2) #operación de transposición con coste 2, tal que (acb <-> ba)
-            if j >= 3 and x[i-2] == y[j-1] and x[i-1] == y[j-3]:
+            if i>=2 and j >= 3 and x[i-2] == y[j-1] and x[i-1] == y[j-3]:
                 D[i][j] = min(D[i][j],D[i-2][j-3]+2) #operación de transposición con coste 2, tal que (ab <-> bca)
     return D[lenX, lenY]
 
