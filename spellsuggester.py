@@ -76,20 +76,12 @@ class SpellSuggester:
         # COMPLETAR
         ########################################
         
-        resul = []
+        resul = [[] for list in range(threshold+1)]
 
         for voc in self.vocabulary:
-            if abs(len(voc)-len(term)) > threshold: d = threshold + 1
-            elif distance == "levenshtein":
-                d = levenshtein_cota_optimista(term,voc,threshold)
-                if d<=threshold:
-                    d = levenshtein(term,voc,threshold)
-                else: d = threshold+1
-            elif distance == "damerau_r":
-                d = damerau_restricted(term,voc,threshold)
-            else:
-                d = damerau_intermediate(term,voc,threshold)
-            if d <= threshold: resul.append(voc)
+            distancia = self.distance_functions[distance](term,voc,threshold)
+            if(distancia<=threshold):
+                    resul[distancia].append(voc)
 
         if flatten:
             resul = [word for wlist in resul for word in wlist]
