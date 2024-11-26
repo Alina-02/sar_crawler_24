@@ -66,29 +66,33 @@ def levenshtein_edicion(x, y, threshold=None):
 def levenshtein_reduccion(x, y, threshold=None):
     toomuch = False #si se pasa del threshold
     lenX, lenY = len(x), len(y) #longitud de las cadenas
-    current_row = [None] * (1 + lenX) #la fila actual (longitud de la primera palabra + 1)
-    previous_row = [None] * (1 + lenX) #la fila previa (longitud de la primera palabra + 1)
+    current_row = np.zeros(lenX + 1, dtype=int)  # La fila actual (longitud de la primera palabra + 1)
+    previous_row = np.zeros(lenX + 1, dtype=int)  # La fila previa (longitud de la primera palabra + 1)
     current_row[0] = 0 
 
     for i in range(1, lenX + 1): #desde el principio de la primera palabra hasta su final
         current_row[i] = current_row[i - 1] + 1 #la columna actual es es coste de la columna anterior + 1
+    
     for j in range(1, lenY + 1): #recorre la segunda palabra
         if toomuch: break
+
         previous_row, current_row = current_row, previous_row #la fila actual se guarda en previous y se modifica la actual (usando la previous)
         current_row[0] = previous_row[0] + 1 #inicializa el primer elemento de la nueva fila
+        
         for i in range(1, lenX + 1): #añade los costes de la fila
             current_row[i] = min( #elige el mínimo entre
                 current_row[i - 1] + 1, #lado izquierdo
                 previous_row[i] + 1, #abajo
                 previous_row[i - 1] + (x[i - 1] != y[j - 1]), #diagonal
             )
+
     return current_row[lenX]
 
 #levenshtein coste espacial threshold
 def levenshtein(x, y, threshold):
     lenX, lenY = len(x), len(y) #longitud de las cadenas
-    current_row = [None] * (1 + lenX) #la fila actual (longitud de la primera palabra + 1)
-    previous_row = [None] * (1 + lenX) #la fila previa (longitud de la primera palabra + 1)
+    current_row = np.zeros(lenX + 1, dtype=int)  # La fila actual (longitud de la primera palabra + 1)
+    previous_row = np.zeros(lenX + 1, dtype=int)  # La fila previa (longitud de la primera palabra + 1)
     current_row[0] = 0 
 
     for i in range(1, lenX + 1): #desde el principio de la primera palabra hasta su final
