@@ -106,8 +106,8 @@ def levenshtein(x, y, threshold):
                 previous_row[i] + 1, #abajo
                 previous_row[i - 1] + (x[i - 1] != y[j - 1]), #diagonal
             )
-        if min(current_row) > threshold: 
-            return threshold+1
+        if min(current_row) > threshold:  #comprueba que el mínimo no supere el threshold
+            return threshold+1 #si supera el threshold lo devuelve sumándole 1
     return current_row[lenX]
 
 def levenshtein_cota_optimista(x, y, threshold):
