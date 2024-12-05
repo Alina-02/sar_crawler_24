@@ -126,13 +126,12 @@ def levenshtein_cota_optimista(x, y, threshold):
             vocab[letter] = 0
         vocab[letter] -= 1
 
-    #devolvemos el maximo valor en valor absoluto
     diferencias = list(vocab.values())
 
-    #devolver el de mayor valor absoluto
+    #calculamos el maximo en valor absoluto
     maxDiff = max(diferencias, key=abs)
-    if maxDiff>threshold: return threshold+1
-    else: return levenshtein(x, y, threshold)
+    if maxDiff>threshold: return threshold+1    #si es mayor que el threshold no hace falta calcular la distancia
+    else: return levenshtein(x, y, threshold)   #si es menor calculamos el valor real
 
 def damerau_restricted_matriz(x, y, threshold=None):
     # completar versión Damerau-Levenstein restringida con matriz
