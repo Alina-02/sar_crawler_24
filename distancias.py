@@ -134,38 +134,43 @@ def levenshtein_cota_optimista(x, y, threshold):
     else: return levenshtein(x, y, threshold)   #si es menor calculamos el valor real
 
 def damerau_restricted_matriz(x, y, threshold=None):
-    # completar versión Damerau-Levenstein restringida con matriz
+    #Versión Damerau-Levenstein restringida con matriz
     lenX, lenY = len(x), len(y)
     D = np.zeros((lenX + 1, lenY + 1), dtype=np.int32)
+    #Generacion de la primera columna.
     for i in range(1, lenX + 1):
         D[i][0] = D[i - 1][0] + 1
+    #Calculo de las demas filas y columnas
     for j in range(1, lenY + 1):
         D[0][j] = D[0][j - 1] + 1
         for i in range(1, lenX + 1):
             D[i][j] = min(
-                D[i - 1][j] + 1,
-                D[i][j - 1] + 1,
-                D[i - 1][j - 1] + (x[i - 1] != y[j - 1]),
+                D[i - 1][j] + 1, #Operación de borrado con coste 1
+                D[i][j - 1] + 1, #Operación de inserción con coste 1
+                D[i - 1][j - 1] + (x[i - 1] != y[j - 1]), #Operación de sustitución, de coste 1 si son iguales, de coste 0 de lo contrario.
             )
             if i >= 2 and j>=2 and x[i-2] == y[j-1] and x[i-1] == y[j-2]:
-                D[i][j] = min(D[i][j],D[i-2][j-2]+1)
+                D[i][j] = min(D[i][j],D[i-2][j-2]+1) #Operacion de translacion, de coste 1, tal que ab <-> ba
     return D[lenX, lenY]
 
 def damerau_restricted_edicion(x, y, threshold=None):
+    # Versión Damerau-Levenstein restringida con matriz con recuperacion de camino.
     lenX, lenY = len(x), len(y)
     D = np.zeros((lenX + 1, lenY + 1), dtype=np.int32)
+    #Generacion de la primera columna.
     for i in range(1, lenX + 1):
         D[i][0] = D[i - 1][0] + 1
+    #Calculo de las demas filas y columnas
     for j in range(1, lenY + 1):
         D[0][j] = D[0][j - 1] + 1
         for i in range(1, lenX + 1):
             D[i][j] = min(
-                D[i - 1][j] + 1,
-                D[i][j - 1] + 1,
-                D[i - 1][j - 1] + (x[i - 1] != y[j - 1]),
+                D[i - 1][j] + 1, # Operación de borrado con coste 1
+                D[i][j - 1] + 1, # Operación de inserción con coste 1
+                D[i - 1][j - 1] + (x[i - 1] != y[j - 1]), # Operación de sustitución, de coste 1 si son iguales, de coste 0 de lo contrario.
             )
             if i >= 2 and j>=2 and x[i-2] == y[j-1] and x[i-1] == y[j-2]:
-                D[i][j] = min(D[i][j],D[i-2][j-2]+1)
+                D[i][j] = min(D[i][j],D[i-2][j-2]+1) # Operacion de transposición, de coste 1, tal que ab <-> ba
     #recuperamos el camino seguido
     camino = []
 
@@ -180,12 +185,13 @@ def damerau_restricted_edicion(x, y, threshold=None):
             camino.append(('', y[j-1]))  # Inserción de y[j-1]
             j -= 1
         else:
-            # Operación de sustitución o coincidencia
+            # Operación de transposición
             if i >= 2 and j >= 2 and x[i-2] == y[j-1] and x[i-1] == y[j-2]:
                 camino.append((str(x[i-2])+str(x[i-1]), str(y[j-2])+str(y[j-1])))
                 i -= 2
                 j -= 2
             else:
+                # Operación de sustitución o coincidencia
                 if x[i-1] != y[j-1]:
                     camino.append((x[i-1], y[j-1]))  # Sustitución de x[i-1] por y[j-1]
                 else:
@@ -199,35 +205,29 @@ def damerau_restricted_edicion(x, y, threshold=None):
     return D[lenX, lenY], camino
 
 def damerau_restricted(x, y, threshold=None):
-    # versión con reducción coste espacial y parada por threshold
+    # Versión con reducción coste espacial y parada por threshold
     lenX, lenY = len(x), len(y)
+    #Usamos 3 filas ya que para la transposición necesitamos i-2
     current_row = [None] * (1 + lenX) 
     previous_row = [None] * (1 + lenX) 
     pprevious_row = [None] * (1 + lenX) 
     current_row[0] = 0 
-
+    #Calculo de la fila 0
     for i in range(1, lenX + 1): 
         current_row[i] = current_row[i - 1] + 1
-    if lenY >= 1:
-        previous_row, current_row = current_row, previous_row 
-        current_row[0] = previous_row[0] + 1 
-        for i in range(1, lenX + 1): 
-            current_row[i] = min( 
-                current_row[i - 1] + 1, 
-                previous_row[i] + 1,
-                previous_row[i - 1] + (x[i - 1] != y[1 - 1]),
-            )
-    for j in range(2, lenY + 1): 
+    #Calculo de las demas filas
+    for j in range(1, lenY + 1):
         pprevious_row, previous_row, current_row = previous_row, current_row, pprevious_row
         current_row[0] = previous_row[0] + 1 
         for i in range(1, lenX + 1):  
             current_row[i] = min( 
-                current_row[i - 1] + 1, 
-                previous_row[i] + 1,
-                previous_row[i - 1] + (x[i - 1] != y[j - 1]),
+                current_row[i - 1] + 1, # Operación de borrado con coste 1
+                previous_row[i] + 1,    # Operación de insercion con coste 1
+                previous_row[i - 1] + (x[i - 1] != y[j - 1]), # Operacion de transposición, de coste 1, tal que ab <-> ba
             )
             if i >= 2 and x[i-2] == y[j-1] and x[i-1] == y[j-2]:
-                current_row[i] = min(current_row[i],pprevious_row[i-2]+1)
+                current_row[i] = min(current_row[i],pprevious_row[i-2]+1) # Operacion de transposición, de coste 1, tal que ab <-> ba
+        # Parada por threshold
         if min(current_row) > threshold:
             return threshold+1
     return current_row[lenX]
