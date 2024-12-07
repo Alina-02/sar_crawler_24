@@ -108,6 +108,8 @@ def levenshtein(x, y, threshold):
             )
         if min(current_row) > threshold:  #comprueba que el mínimo no supere el threshold
             return threshold+1 #si supera el threshold lo devuelve sumándole 1
+    if(current_row[lenX]>threshold): #Comprobación final del threshold
+        return threshold+1
     return current_row[lenX]
 
 def levenshtein_cota_optimista(x, y, threshold):
@@ -225,11 +227,14 @@ def damerau_restricted(x, y, threshold=None):
                 previous_row[i] + 1,    # Operación de insercion con coste 1
                 previous_row[i - 1] + (x[i - 1] != y[j - 1]), # Operacion de transposición, de coste 1, tal que ab <-> ba
             )
-            if i >= 2 and x[i-2] == y[j-1] and x[i-1] == y[j-2]:
-                current_row[i] = min(current_row[i],pprevious_row[i-2]+1) # Operacion de transposición, de coste 1, tal que ab <-> ba
+            if i >= 2 and j>=2 and x[i-2] == y[j-1] and x[i-1] == y[j-2]:
+                current_row[i] = min(current_row[i],pprevious_row[i-2]+1)
         # Parada por threshold
         if min(current_row) > threshold:
             return threshold+1
+        
+    if(current_row[lenX]>threshold): #Comprobación final del threshold
+        return threshold+1
     return current_row[lenX]
 
 def damerau_intermediate_matriz(x, y, threshold=None):
@@ -354,6 +359,9 @@ def damerau_intermediate(x, y, threshold=None):
         #Implementación de la parada por threshold
         if min(current_row) > threshold:
             return threshold+1
+        
+    if(current_row[lenX]>threshold): #Comprobación final del threshold
+        return threshold+1
     return current_row[lenX]
 
 opcionesSpell = {
