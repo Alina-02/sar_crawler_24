@@ -82,8 +82,8 @@ class SAR_Indexer:
         """
 
         self.use_spelling = use_spelling
-        vocabulary = list(self.index)
-        self.speller = SpellSuggester(opcionesSpell, vocabulary, distance, threshold)
+        vocabulary = self.index['all'].keys()
+        self.speller = SpellSuggester(opcionesSpell, list(vocabulary), distance, threshold)
 
     def set_showall(self, v:bool):
         """
@@ -800,7 +800,6 @@ class SAR_Indexer:
               
          """
         if(self.use_spelling and res == []):
-            print("hola", self.speller.suggest(term))
             words = self.speller.suggest(term)
             res = []
             for word in words:
